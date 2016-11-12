@@ -9,6 +9,10 @@ include("piece_type.jl")
 include("board_type.jl")
 include("move_type.jl")
 
+ourSeed = ARGS[1]
+
+ourRand = MersenneTwister(ourSeed)
+
 function getType(filename)
   db = SQLite.DB(filename)
   res = SQLite.query(db, "SELECT value FROM meta WHERE key ='type';")
@@ -145,34 +149,25 @@ function generateNextBoard(board, db, index)
     #println(OP)
     option = getSQLValue(OP)
 
-    # if typeof(OP[1][1])== Nullable{Any}
-    #   option = nothing
-    # else
-    #   #option = get(OP[1][1]) #option will be either "!" or NULL
-    #   option = "!"
-    # end
-
-
     res = SQLite.query(db, "SELECT targetx2 FROM moves WHERE move_number = $index;")
     targetx2 = getSQLValue(res)
-    # if typeof(OP[1][1])== Nullable{Any}
-    #   targetx2 = nothing
-    # else
-    #   targetx2 = get(res[1][1])
-    # end
-
     res = SQLite.query(db, "SELECT targety2 FROM moves WHERE move_number = $index;")
     targety2 = getSQLValue(res)
-    # if typeof(OP[1][1])== Nullable{Any}
-    #   targety2 = nothing
-    # else
-    #   targety2 = get(res[1][1])
-    # end
+
+    res = SQLite.query(db, "SELECT targetx3 FROM moves WHERE move_number = $index;")
+    targetx3 = getSQLValue(res)
+    res = SQLite.query(db, "SELECT targety3 FROM moves WHERE move_number = $index;")
+    targety3 = getSQLValue(res)
 
 
-    #update the board with a regular move or double move
+
+    #update the board with a regular move or double move, or a triple move
     if targetx2 != nothing && targety2 != nothing
-      newMove = initMoveDoubleMovement(sourcex, sourcey, targetx, targety, option, targetx2, targety2)
+      if targetx3 != nothing && targety3 != nothing
+        newMove = initMoveTripleMovement(sourcex, sourcey, targetx, targety, option, targetx2, targety2)
+      else
+        newMove = initMoveDoubleMovement(sourcex, sourcey, targetx, targety, option, targetx2, targety2)
+      end
     else
       newMove = initMoveMovement(sourcex, sourcey, targetx, targety, option)
     end
@@ -228,6 +223,19 @@ function getSQLValue(SQLThing)
   end
 end
 
+
+function randChar()
+  return Char( rand(ourRand, 48:122) )
+end
+
+function randString(length::Int)
+  stringArray = []
+  for i in 1:length
+    push!(stringArray, "$(randChar())" )
+  end
+  string = join( stringArray, "")
+  return string
+end
 
 
 

@@ -6,7 +6,7 @@ var blackHandJS = new Array();
 var statusJS; //changed at every function so julia know whats going on.
 
 function generateTable() {
-    statusJS = "generateTable"
+    statusJS = "generateTable";
     //Create a HTML Table element.
     var table = document.createElement('TABLE');
     var tableBlack = document.createElement('TABLE');
@@ -126,6 +126,82 @@ function movejl(){
     statusJS = "movejl";
 }
 
+
+
+//FOR START WINDOW
+function startNewGame() {
+        statusJS = "newGame"
+       
+}
+function contGame() {
+        statusJS = "contGame"
+         return document.getElementById("contText").value;
+}
+function replayGame() {
+        statusJS = "replayGame"
+         return document.getElementById("replayText").value;
+}
+
+
+
+//FOR NEW GAME WINDOW
+
+//make stuff visible or not depending on what the new game 
+
+function clearForm(){
+    document.getElementById("fileText").value = "";
+    document.getElementById("gameType").value ="Shogi";
+    document.getElementById("cheatcheckbox").checked = false;
+    document.getElementById("timeLimit").value = "";
+    document.getElementById("timeInc").value = "";
+    document.getElementById("gameDifficulty").value = "Normal";
+    document.getElementById("flipcheckbox").checked = false;
+}
+
+
+function remoteGame(){
+   clearForm()
+    
+    
+}
+function localP(){   
+    clearForm()
+}
+
+function localAI(){
+    clearForm()
+}
+function HostP(){   
+    clearForm()
+}
+function HostAI(){ 
+    clearForm()
+}
+
+var filenameJS =""
+var gameTypeJS =""
+var cheatingJS =""
+var timelimitJS=""
+var limitaddJS=""
+var difficultyJS =""
+var flipJS =""
+
+function getValues(){
+    filenameJS = document.getElementById("fileText").value;
+    gameTypeJS = document.getElementById("gameType").value
+    gameTypeJS = gameTypeJS.charAt(0)
+    cheatingJS = (document.getElementById("cheatcheckbox").checked == true)? "T": "F";
+    timelimitJS = document.getElementById("timeLimit").value
+    limitaddJS =  document.getElementById("timeInc").value
+    difficultyJS =document.getElementById("gameDifficulty").value 
+    flipJS = (document.getElementById("flipcheckbox").checked == true)? "true": "false";
+    
+    
+    statusJS = "continue"
+}
+
+
+//FOR ALL WINDOWS
 function exit(){
     statusJS = "exit";
 }
@@ -136,20 +212,42 @@ function resetStatus(){
 
 
 
-/*
-//NORMAL CHESS
-var init = function() {
-
-var board2 = ChessBoard('board2', {
-  draggable: true,
-  dropOffBoard: 'trash',
-  sparePieces: true
-});
-$('#startBtn').on('click', board2.start);
-$('#clearBtn').on('click', board2.clear);
 
 
-}; // end init()
-$(document).ready(init);
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -13,9 +13,12 @@ load!(w,"GUI/css/board.css")
 sleep(3)
 
 body!(w, "
+<input type='button' value='Generate current board' onclick='generateTable()' />
+<input type='button' value='run move.jl' onclick='movejl()' />
 <div id='dvBHand'> </div>
 <div id='dvTable'z> </div>
 <div id='dvWHand'> </div>
+<input type='button' value='exit' onclick='exit()' />
 ")
 
 #☖☗
@@ -27,10 +30,10 @@ function fillJSBoard(board::Board)
    # printHand(board, BLACK)
     for j = BOARD_DIMENSIONS:-1:1
         for i= 1:BOARD_DIMENSIONS
-        #add piece to item array in js
+        # add piece to item array in js
         @js w item.push($(boardArray[i,j]))
         end
-        #add row to boardJS
+        # add row to boardJS
         @js w boardJS.push(item.slice())
         @js w item.splice(0)
        # @printf("\n")
@@ -63,12 +66,14 @@ fillJSBoard(board)
 
 @js w generateTable();
 
-#=
+
 #MEMORY PROBLEMS HERE
 #LOOP TO COMMUNICATE WITH WINDOW
+println("NEW STUFF")
+
 status =""
 while status != "exit"
-
+sleep(0.01)
 status = @js w statusJS
 if status == "generateTable"
   println("Generate Table clicked")
@@ -76,10 +81,9 @@ if status == "generateTable"
 end
 if status == "movejl"
   println("movejl clicked")
-  #include("move.jl") NOT WORKING
+  include("move.jl")
   status = @js w resetStatus()
 end
 end
-=#
-readline(STDIN)
-println("exit clicked")
+println("Exit clicked")
+

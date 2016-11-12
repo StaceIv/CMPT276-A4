@@ -48,6 +48,17 @@ function getCurrentPlayer(board::Board)
   end
 end
 
+function getNextPlayer(board::Board)
+  current = getCurrentPlayer(board)
+  if current == BLACK
+    return WHITE
+  elseif current == WHITE
+    return BLACK
+  else
+    assert(false)
+end
+
+
 
 
 
@@ -75,6 +86,17 @@ function fillInitialBoardArray(boardArray)
 
     if gameType == "standard"
       pieceNames = [
+      "lance" "-" "pawn" "-" "-" "-" "pawn" "-" "lance";
+      "knight" "bishop" "pawn" "-" "-" "-" "pawn" "rook" "knight";
+      "silver_general" "-" "pawn" "-" "-" "-" "pawn" "-" "silver_general";
+      "gold_general" "-" "pawn" "-" "-" "-" "pawn" "-" "gold_general";
+      "king" "-" "pawn" "-" "-" "-" "pawn" "-" "king";
+      "gold_general" "-" "pawn" "-" "-" "-" "pawn" "-" "gold_general";
+      "silver_general" "-" "pawn" "-" "-" "-" "pawn" "-" "silver_general";
+      "knight" "rook" "pawn" "-" "-" "-" "pawn" "bishop" "knight";
+      "lance" "-" "pawn" "-" "-" "-" "pawn" "-" "lance";
+      ]
+      #=
       "l" "-" "p" "-" "-" "-" "p" "-" "l"; #[1,1] - [1,9]
       "n" "b" "p" "-" "-" "-" "p" "r" "n"; #[2,1] - [2,9]
       "s" "-" "p" "-" "-" "-" "p" "-" "s"; #[3,1] - [3,9]
@@ -84,7 +106,7 @@ function fillInitialBoardArray(boardArray)
       "s" "-" "p" "-" "-" "-" "p" "-" "s";
       "n" "r" "p" "-" "-" "-" "p" "b" "n";
       "l" "-" "p" "-" "-" "-" "p" "-" "l";
-      ]
+      =#
       for i = 1:BOARD_DIMENSIONS
         for j = 1:BOARD_DIMENSIONS
           boardArray[i,j].name = pieceNames[i,j]
@@ -98,61 +120,21 @@ function fillInitialBoardArray(boardArray)
         end
       end
 
-      # for i = 1:BOARD_DIMENSIONS
-      #   boardArray[i,3].name = Pawn
-      #   boardArray[i,3].color = WHITE
-      #   boardArray[i,7].name = Pawn
-      #   boardArray[i,7].color = BLACK
-      # end
-      #
-      # boardArray[1,1].name = Lance
-      # boardArray[2,1].name = Knight
-      # boardArray[3,1].name = SilverGeneral
-      # boardArray[4,1].name = GoldGeneral
-      # boardArray[5,1].name = King
-      # boardArray[6,1].name = GoldGeneral
-      # boardArray[7,1].name = SilverGeneral
-      # boardArray[8,1].name = Knight
-      # boardArray[9,1].name = Lance
-      #
-      # boardArray[2,2].name = Bishop
-      # boardArray[8,2].name = Rook
-      #
-      # for i = 1:9
-      #   boardArray[i,1].color = WHITE
-      # end
-      #
-      # boardArray[2,2].color = WHITE
-      # boardArray[8,2].color = WHITE
-      #
-      # boardArray[1,9].name = Lance
-      # boardArray[2,9].name = Knight
-      # boardArray[3,9].name = SilverGeneral
-      # boardArray[4,9].name = GoldGeneral
-      # boardArray[5,9].name = King
-      # boardArray[6,9].name = GoldGeneral
-      # boardArray[7,9].name = SilverGeneral
-      # boardArray[8,9].name = Knight
-      # boardArray[9,9].name = Lance
-      #
-      # boardArray[2,8].name = Rook
-      # boardArray[8,8].name = Bishop
-      #
-      # for i = 1:9
-      #   boardArray[i,9].color = BLACK
-      # end
-      #
-      # boardArray[2,8].color = BLACK
-      # boardArray[8,8].color = BLACK
-
     elseif gameType == "minishogi" #minishogi
       pieceNames = [
+      "king" "pawn" "-" "-" "rook"; #[1,1] - [1,5]
+      "gold_general" "-" "-" "-" "bishop"; #[2,1] - [2,5]
+      "silver_general" "-" "-" "-" "silver_general"; #[3,1] - [3,5]
+      "bishop" "-" "-" "-" "gold_general"; #so on
+      "rook" "-" "-" "pawn" "king";
+      ]
+      #=
       "k" "p" "-" "-" "r"; #[1,1] - [1,5]
       "g" "-" "-" "-" "b"; #[2,1] - [2,5]
       "s" "-" "-" "-" "s"; #[3,1] - [3,5]
       "b" "-" "-" "-" "g"; #so on
       "r" "-" "-" "p" "k";
-      ]
+      =#
       for i = 1:BOARD_DIMENSIONS
         for j = 1:BOARD_DIMENSIONS
           boardArray[i,j].name = pieceNames[i,j]
@@ -165,44 +147,21 @@ function fillInitialBoardArray(boardArray)
           end
         end
       end
-      #
-      # boardArray[5,1].name = Rook
-      # boardArray[4,1].name = Bishop
-      # boardArray[3,1].name = SilverGeneral
-      # boardArray[2,1].name = GoldGeneral
-      # boardArray[1,1].name = King
-      # boardArray[1,2].name = Pawn
-      #
-      # for i = 1:5
-      #   boardArray[i,1].color = WHITE
-      # end
-      # boardArray[1,2].color = WHITE
-      #
-      # boardArray[1,5].name = Rook
-      # boardArray[2,5].name = Bishop
-      # boardArray[3,5].name = SilverGeneral
-      # boardArray[4,5].name = GoldGeneral
-      # boardArray[5,5].name = King
-      # boardArray[5,4].name = Pawn
-      #
-      # for i = 1:5
-      #   boardArray[i,5].color = BLACK
-      # end
-      # boardArray[4,5].color = BLACK
+
     elseif gameType == "chu"
       pieceNames = [
-      "l" "a" "m" "p" "-" "-" "-" "-" "p" "m" "a" "l" #[1,1] - [1,9]
-      "f" "-" "v" "p" "-" "-" "-" "-" "p" "v" "-" "f" #[2,1] - [2,9]
-      "c" "b" "r" "p" "-" "-" "-" "-" "p" "r" "b" "c" #[3,1] - [3,9]
-      "s" "-" "h" "p" "o" "-" "-" "o" "p" "h" "-" "s" #so on
-      "g" "t" "d" "p" "-" "-" "-" "-" "p" "d" "t" "g"
-      "k" "n" "i" "p" "-" "-" "-" "-" "p" "i" "n" "k"
-      "e" "x" "q" "p" "-" "-" "-" "-" "p" "q" "x" "e"
-      "g" "t" "d" "p" "-" "-" "-" "-" "p" "d" "t" "g"
-      "s" "-" "h" "p" "o" "-" "-" "o" "p" "h" "-" "s"
-      "c" "b" "r" "p" "-" "-" "-" "-" "p" "r" "b" "c"
-      "f" "-" "v" "p" "-" "-" "-" "-" "p" "v" "-" "f"
-      "l" "a" "m" "p" "-" "-" "-" "-" "p" "m" "a" "l"
+      "lance" "reverse_chariot" "side_mover" "pawn" "-" "-" "-" "-" "pawn" "side_mover" "reverse_chariot" "lance"; #[1,1] - [1,9]
+      "ferocious_leopard" "-" "vertical_mover" "pawn" "-" "-" "-" "-" "pawn" "vertical_mover" "-" "ferocious_leopard"; #[2,1] - [2,9]
+      "copper_general" "bishop" "rook" "pawn" "-" "-" "-" "-" "pawn" "rook" "bishop" "copper_general"; #[3,1] - [3,9]
+      "silver_general" "-" "dragon_horse" "pawn" "o" "-" "-" "o" "pawn" "dragon_horse" "-" "silver_general"; #so on
+      "gold_general" "blind_tiger" "dragon_king" "pawn" "-" "-" "-" "-" "pawn" "dragon_king" "blind_tiger" "gold_general";
+      "king" "kirin" "lion" "pawn" "-" "-" "-" "-" "pawn" "lion" "kirin" "king";
+      "drunken_elephant" "phoenix" "queen" "pawn" "-" "-" "-" "-" "pawn" "queen" "phoenix" "drunken_elephant";
+      "gold_general" "blind_tiger" "dragon_king" "pawn" "-" "-" "-" "-" "pawn" "dragon_king" "blind_tiger" "gold_general";
+      "silver_general" "-" "dragon_horse" "pawn" "o" "-" "-" "o" "pawn" "dragon_horse" "-" "silver_general";
+      "copper_general" "bishop" "rook" "pawn" "-" "-" "-" "-" "pawn" "rook" "bishop" "copper_general";
+      "ferocious_leopard" "-" "vertical_mover" "pawn" "-" "-" "-" "-" "pawn" "vertical_mover" "-" "ferocious_leopard";
+      "lance" "reverse_chariot" "side_mover" "pawn" "-" "-" "-" "-" "pawn" "side_mover" "reverse_chariot" "lance";
       ]
       for i = 1:BOARD_DIMENSIONS
         for j = 1:BOARD_DIMENSIONS
@@ -216,6 +175,25 @@ function fillInitialBoardArray(boardArray)
           end
         end
       end
+    elseif gameType == "ten"
+      pieceNames = [
+      "lance" "reverse_chariot" "side_soldier" "side_mover" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "side_mover" "side_soldier" "reverse_chariot" "lance";
+      "knight" "-" "vertical_soldier" "vertical_mover" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "vertical_mover" "vertical_soldier" "-" "knight";
+      "ferocious_leopard" "chariot_soldier" "bishop" "rook" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "rook" "bishop" "chariot_soldier" "ferocious_leopard";
+      "iron_general" "chariot_soldier" "dragon_horse" "horned_falcon" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "horned_falcon" "dragon_horse" "chariot_soldier" "iron_general";
+      "copper_general" "-" "dragon_king" "soaring_eagle" "pawn" "dog" "-" "-" "-" "-" "dog" "pawn" "soaring_eagle" "dragon_king" "-" "copper_general";
+      "silver_general" "blind_tiger" "WB" "bishop_general" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "bishop_general" "WB" "blind_tiger" "silver_general";
+      "gold_general" "kirin" "fire_demon" "rook_general" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "rook_general" "fire_demon" "phoenix" "gold_general";
+      "king" "lion" "lion_hawk" "great_general" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "vice_general" "free_eagle" "queen" "drunken_elephant";
+      "drunken_elephant" "queen" "free_eagle" "vice_general" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "great_general" "lion_hawk" "lion" "king";
+      "gold_general" "phoenix" "fire_demon" "rook_general" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "rook_general" "fire_demon" "kirin" "gold_general";
+      "silver_general" "blind_tiger" "water_buffalo" "bishop_general" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "bishop_general" "water_buffalo" "blind_tiger" "silver_general";
+      "copper_general" "-" "dragon_king" "soaring_eagle" "pawn" "dog" "-" "-" "-" "-" "dog" "pawn" "soaring_eagle" "dragon_king" "-" "copper_general";
+      "iron_general" "chariot_soldier" "dragon_horse" "horned_falcon" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "horned_falcon" "dragon_horse" "chariot_soldier" "iron_general";
+      "ferocious_leopard" "chariot_soldier" "bishop" "rook" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "rook" "bishop" "chariot_soldier" "ferocious_leopard";
+      "knight" "-" "vertical_soldier" "vertical_mover" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "vertical_mover" "vertical_soldier" "-" "knight";
+      "lance" "reverse_chariot" "side_soldier" "side_mover" "pawn" "-" "-" "-" "-" "-" "-" "pawn" "side_mover" "side_soldier" "reverse_chariot" "lance";
+      ]
     else
       assert(false)
     end

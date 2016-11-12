@@ -4,14 +4,12 @@
 =#
 include("dependencies.jl")
 
-# const TIME_LIMIT = 30 #MAKE THIS WHATEVER LUDICROUS NUMBER YOU WANT. IT'S ALL LEGAL.
+const TIME_LIMIT = 7*60 #MAKE THIS WHATEVER LUDICROUS NUMBER YOU WANT. IT'S ALL LEGAL.
 # const MOVE_LIMIT = 1000#20_000  #2200 seems about right for 4.5 minute turns
 const EXPLORATION_RATE = 1.4 #how much the ai looks at new options, as opposed to what has worked before.
 const MAX_TREE_DEPTH = 100  #helps stop the tree from crashing from memory use, and enforces more exploration after some point.
 
-ourSeed = ARGS[1]
 
-ourRand = MersenneTwister(ourSeed)
 
 function getMove(board::Board)
   # moveTree = initMonteCarloRoot(board)
@@ -85,16 +83,16 @@ function initMonteCarloRoot(board::Board)
 
 
   if timeLeft == 0 #INFINITE TIME
-    timeToTake == TIME_LIMIT
+    timeToTake = TIME_LIMIT
 
   else  #FINITE TIME
     if gameType == GAMETYPE_MINI
       const AVERAGE_GAME_LENGTH = 80
     else
-      const AVERAGE_GAME_LENGTH::Int = 125
+      const AVERAGE_GAME_LENGTH = 125
     end
     currentTurn = Int(floor(self.board.turnNumber/2)) #number of moves you've taken before
-    expectedTurnsRemaining = min(AVERAGE_GAME_LENGTH - currentTurn, 10)
+    expectedTurnsRemaining = max(AVERAGE_GAME_LENGTH - currentTurn, 10)
     timeToTake = timeLeft / expectedTurnsRemaining
 
     if timeToTake < 1.5
@@ -129,13 +127,15 @@ function initMonteCarloRoot(board::Board)
 	end #End forloop, bestChildIndex is now equal to the highest scoring move which does not enter check.
 
 	tracePrint( ("Best child index", self.bestChildIndex))
-  if self.bestChildIndex == length(self.children)
-    tracePrint( "THIS SHOULD BE CHECKMATE - press a key" )
-    readline(STDIN)
-  end
+
+  #TRACE
+  #recursivePrintNode(self)
+
 
   return self.children[self.bestChildIndex].move, Int(now()) - startTime #return best child and used time
 end
+
+
 
 function initMonteCarloNode(parent, move)
   assertIsMonteCarlo( parent )
@@ -154,7 +154,7 @@ function initMonteCarloNode(parent, move)
   )
 
 	updateBoard(self.board, self.move)
-  if gameType == GAMETYPE_MINI
+  if false #gameType == GAMETYPE_MINI
 	  self.allMoves = allLegalNotStupidMoves( self.board )
   else
     self.allMoves = allLegalMoves( self.board )
@@ -163,7 +163,6 @@ function initMonteCarloNode(parent, move)
   popResignIfOtherOptions(self.allMoves) #Kill resign if you can keep playing
 
   self.remainingMoves = deepcopy(self.allMoves)
-	#tracePrint("monteCarloNode creation success")
 	return self
 end
 
@@ -200,23 +199,26 @@ function selectNode(node, depth::Int)
 	end
 
 	#search down the most interesting visited node
-	score::Float64 = -Inf
+	#score::Float64 = -Inf
+  score::Float64
 	lastI::Int = 0
 	result = node
-  if depth%2 == 1 #Original player's turn POSSIBLE FIXME
-   for i in 1:length(node.children)
-     newScore::Float64 = selectionEval(node.children[i])
-    	if (newScore > score)
-  			score = newScore
-  			result = node.children[i] #There is a better looking kid to try
-  			lastI = i
-      end
+  if depth%2 == 0 #Original player's turn POSSIBLE FIXME
+    score = selectionEval(node.children[1])
+    for i in 2:length(node.children)
+      newScore::Float64 = selectionEval(node.children[i])
+        if (newScore > score)
+	        score = newScore
+	        result = node.children[i] #There is a better looking kid to try
+			    lastI = i
+        end
     end
 	else #Opponent's turn, look for the worst child
-   for i in 1:length(node.children)
-     newScore::Float64 = selectionEval(node.children[i])
+    score = selectionEval(node.children[1])
+    for i in 2:length(node.children)
+      newScore::Float64 = selectionEval(node.children[i])
     	if (newScore < score)
-  			score = newScore
+        score = newScore
   			result = node.children[i] #There is a better looking kid to try
   			lastI = i
       end
@@ -252,6 +254,7 @@ function myExpand(node)
     deleteat!(node.remainingMoves, randIndex)
     return true
   end
+
   return false
 end
 
@@ -274,15 +277,19 @@ function simulate(node)
 	theWinState = winState(node.board)
 
 	if (theWinState == "B" && getCurrentPlayer(node.board) == BLACK) || (theWinState == "W" && getCurrentPlayer(node.board) == WHITE)
-		backPropogateLoss(node)#backPropogateWin(node)
+		#backPropogateLoss(node)
+    backPropogateWin(node.parent)
 	elseif (theWinState == "B" && getCurrentPlayer(node.board) == WHITE) || (theWinState == "W" && getCurrentPlayer(node.board) == BLACK)
-		backPropogateWin(node)#backPropogateLoss(node)
+		#backPropogateWin(node)
+    backPropogateLoss(node.parent)
 	elseif  (theWinState == "R" && getCurrentPlayer(node.board) == BLACK) || (theWinState == "r" && getCurrentPlayer(node.board) == WHITE)
-		backPropogateResignWin(node) #backPropogateResignLoss(node)
+		#backPropogateResignWin(node)
+    backPropogateResignLoss(node.parent)
 	elseif (theWinState == "R" && getCurrentPlayer(node.board) == WHITE) || (theWinState == "r" && getCurrentPlayer(node.board) == BLACK)
-		backPropogateResignLoss(node) #backPropogateResignWin(node)
+		#backPropogateResignLoss(node)
+    backPropogateResignWin(node.parent)
 	elseif theWinState == "D"
-		backPropogateDraw(node)
+		#backPropogateDraw(node.parent)
 	else
 		tracePrint(theWinState)
 		assert(false)
@@ -290,7 +297,6 @@ function simulate(node)
 
 
   #deletes the simulation children
-
 	while (node != origNode)  #CHECK THIS WORKS ALSO
 		nextNode = node.parent
 		pop!(node.parent.children)
@@ -356,6 +362,18 @@ function usage(message)
   println(message)
 end
 
+function recursivePrintNode(node)
+  if isa(node, MonteCarloNode)
+    println( repeat("   ", node.depth), node.move, "  ",node.plays, "  ", length(node.remainingMoves) )
+  else
+    println( repeat("   ", node.depth), "  ", node.plays, "  ", length(node.remainingMoves) )
+  end
+
+  for i in 1:length(node.children)
+    recursivePrintNode(node.children[i])
+  end
+end
+
 
  #Checks to see if a filename has been entred.
 if !isdefined(ARGS, 1)
@@ -412,4 +430,4 @@ end
 board = generateCurrentBoard()
 Base.eval(:(have_color=true))
 #TRACEPRINT
-#printBoard(board, false) #Removed the print hands because they were in wrong positions, and I already put them in print board.
+printBoard(board, false)

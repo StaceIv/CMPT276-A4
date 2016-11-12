@@ -7,6 +7,8 @@ type Move
   option::Union{AbstractString,Piece,Void}
   targetx2::Union{Int,Void}
   targety2::Union{Int,Void}
+  targetx3::Union{Int,Void}
+  targety3::Union{Int,Void}
 end
 #DOES NOT HOLD MOVENUMBER AND I_AM_CHEATING
 
@@ -19,7 +21,9 @@ function ==(a::Move, b::Move)
           && a.targety == b.targety
           && a.option == b.option
           && a.targetx2 == b.targetx2
-          && a.targety2 == b.targety2)
+          && a.targety2 == b.targety2
+          && a.targetx3 == b.targetx3
+          && a.targety3 == b.targety3)
 end
 
 
@@ -30,8 +34,10 @@ function initMoveMovement(sourcex::Int, sourcey::Int, targetx::Int, targety::Int
               targetx,
               targety,
               option,
-              nothing,#targetx2
-              nothing #targety2
+              nothing, #targetx2
+              nothing, #targety2
+              nothing, #targetx3
+              nothing  #targety3
               )
 end
 
@@ -43,7 +49,23 @@ function initMoveDoubleMovement(sourcex::Int, sourcey::Int, targetx::Int, target
               targety,
               option,
               targetx2,
-              targety2
+              targety2,
+              nothing, #targetx3
+              nothing  #targety3
+              )
+end
+
+function initMoveTripleMovement(sourcex::Int, sourcey::Int, targetx::Int, targety::Int, option::Union{AbstractString,Void}, targetx2::Int, targety2::Int, targetx3::Int, targety3::Int)
+  return Move(MOVETYPE_MOVEMENT,
+              sourcex,
+              sourcey,
+              targetx,
+              targety,
+              option,
+              targetx2,
+              targety2,
+              targetx3,
+              targety3
               )
 end
 
@@ -55,7 +77,9 @@ function initMoveDrop(targetx::Int, targety::Int, option::Piece)
               targety,
               option,
               nothing,#targetx2
-              nothing #targety2
+              nothing, #targety2
+              nothing, #targetx3
+              nothing  #targety3
               )
 end
 
@@ -67,7 +91,9 @@ function initMoveResign()
               nothing,
               nothing,
               nothing,#targetx2
-              nothing #targety2
+              nothing,#targety2
+              nothing, #targetx3
+              nothing  #targety3
               )
 end
 

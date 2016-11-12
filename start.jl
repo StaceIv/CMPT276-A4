@@ -89,11 +89,13 @@ if !isdefined(ARGS, 1)
 end
 
 #Checks to see if type of game has been specified
+#=
 if !isdefined(ARGS, 2)
   usage("Type of Game is mandatory")
 elseif ARGS[2] != "S" && ARGS[2] != "s" && ARGS[2] != "M" && ARGS[2] != "m" && ARGS[2] != "c" && ARGS[2] != "C"
   usage("Enter either S, M or C please.")
 end
+=#
 
 #Checks to see if Cheating has been set to T or F
 if !isdefined(ARGS, 3)

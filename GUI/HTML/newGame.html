@@ -1,0 +1,81 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="/css/startWindow.css">
+    <script src="/js/jquery-1.10.1.min.js"></script>
+    <script src="/js/json3.min.js"></script>
+    <script src="/js/generateBoard.js"></script>
+
+
+</head>
+
+<body>
+    
+    
+<h1>Create New Game</h1>
+
+    <div class="container">
+         <input type="button" onclick="remoteGame()" value="Remote">
+         <input type="button" onclick="localP()" value="Local(Player)">
+         <input type="button" onclick="localAI()" value="Local(AI)">
+         <input type="button" onclick="HostP()" value="Host(Player)">
+         <input type="button" onclick="HostAI()" value="Host(AI)">
+</div>
+    
+<div class="nameGame">
+  <label for="fileText">File Name:</label>
+  <input type="text" id="fileText" placeholder="Enter file name"/>
+</div>
+    
+<div class="typeGame">
+    <label for="gameType">Game Type:</label>
+  <select class="selectbox" id="gameType">
+    <option>Mini</option>
+    <option selected="selected">Shogi</option>
+    <option>Chu</option>
+    <option>Tenjiku</option>
+  </select>
+</div>    
+    
+<div class="cheatGame">
+    <label for="cheatcheckbox">Cheating:</label>
+    <input type="checkbox" id="cheatcheckbox">
+</div>
+    
+    
+<div class="timeLimGame">
+  <label for="timeLimit">Time Limit:</label>
+  <input type="number" min="0" id="timeLimit" placeholder="Optional"/>
+</div>    
+    
+<div class="timeIncGame">
+  <label for="timeInc">Time Increment:</label>
+  <input type="number" min="0" id="timeInc" placeholder="Optional"/>
+</div>    
+    
+<div class="difficultyGame">
+    <label for="gameType">Game Difficulty:</label>
+  <select class="selectbox" id="gameDifficulty">
+    <option selected="selected">Normal</option>
+    <option>Hard</option>
+    <option>Suicidal</option>
+    <option>Protracted death</option>
+    <option>Random AI</option>
+  </select>
+</div>    
+    
+<div class="flipGame">
+    <label for="flipcheckbox">Japanese roulette mode:</label>
+    <input type="checkbox" id="flipcheckbox">
+</div>
+    
+<H1>STUFF FOR SERVER GO HERE</H1>
+
+
+<div class="container">
+  <input type="button" onclick="getValues()" value="Continue">
+</div>
+
+</body>
+
+</html>

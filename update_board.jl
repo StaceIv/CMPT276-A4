@@ -4,6 +4,7 @@ function updateBoard(board::Board, move::Move)
     #Should a piece be captured?
     targetPiece = getPiece(board, move.targetx, move.targety)
     if ! isNullPiece(targetPiece)
+      unpromotePiece(targetPiece)
       addToHand( board, getCurrentPlayer(board), targetPiece )
     end
 
@@ -15,7 +16,8 @@ function updateBoard(board::Board, move::Move)
 
     #set piece after update
     setPiece(board, move.targetx, move.targety, tempPiece)
-
+    finalX = move.targetx
+    finalY = move.targety
     #Remove piece from initial space
     newPiece = Piece("","-")
     setPiece(board, move.sourcex, move.sourcey, newPiece)
@@ -26,17 +28,65 @@ function updateBoard(board::Board, move::Move)
       #Should a piece be captured?
       targetPiece = getPiece(board, move.targetx2, move.targety2)
       if ! isNullPiece(targetPiece)
+        unpromotePiece(targetPiece)
         addToHand( board, getCurrentPlayer(board), targetPiece )
       end
 
       #Replace the target square with the moved piece
       #set piece after update
       setPiece(board, move.targetx2, move.targety2, tempPiece)
-
+      finalX = move.targetx2
+      finalY = move.targety2
       #Remove piece from initial space
       setPiece(board, move.targetx, move.targety, newPiece)
+
+      if move.targetx3 != nothing && move.targety2 != nothing
+        #Should a piece be captured?
+        targetPiece = getPiece(board, move.targetx3, move.targety3)
+        if ! isNullPiece(targetPiece)
+          unpromotePiece(targetPiece)
+          addToHand( board, getCurrentPlayer(board), targetPiece )
+        end
+
+        #Replace the target square with the moved piece
+        #set piece after update
+        setPiece(board, move.targetx3, move.targety3, tempPiece)
+        finalX = move.targetx3
+        finalY = move.targety3
+
+        #Remove piece from initial space
+        setPiece(board, move.targetx2, move.targety2, newPiece)
+      end
     end
 
+    #is the piece moving next to a fire demon?
+    for x = -1:1
+      for y = -1:1
+        if finalX+x >= 1 && finalY+y >= 1 && finalX+x <= BOARD_DIMENSIONS && finalY+y <= BOARD_DIMENSIONS #if target in bounds
+          targetPiece = getPiece(board, finalX+x, finalY+y)
+          if targetPiece.name == FireDemon  #kill your piece (even if your piece is a fire demon, in which case your fire demon doesnt burn anything)
+            setPiece(board, finalX+x, finalY+y, newPiece) #replace piece with empty square
+            addToHand( board, getNextPlayer(board), tempPiece ) #add piece to opponent's hand
+          end
+        end
+      end
+    end
+
+    #is the moving piece a fire demon?
+    if tempPiece.name == FireDemon #if it moved next to a fire demon, it's already been killed by this point ^^
+      #Kill all adjacent enemies
+      for x = -1:1
+        for y = -1:1
+          if finalX+x >= 1 && finalY+y >= 1 && finalX+x <= BOARD_DIMENSIONS && finalY+y <= BOARD_DIMENSIONS #if target in bounds
+            targetPiece = getPiece(board, finalX+x, finalY+y)
+            if !isNullPiece(targetPiece)  #kill adjacent enemy piece
+              unpromotePiece(targetPiece)
+              addToHand( board, getCurrentPlayer(board), targetPiece )
+            end
+          end
+        end
+      end
+    end
 
   #DROP
   elseif isMoveDrop(move)
@@ -46,7 +96,7 @@ function updateBoard(board::Board, move::Move)
     If so, remove that piece from the hand. (note that updateBoard doesnt care if the piece you're dropping
     was in your hand, or if the dropping is legal)=#
     currentHand = handForPlayer(board, getCurrentPlayer(board))
-    for i in 1:length(currentHand)
+    for i = 1:length(currentHand)
       if currentHand[i].name == move.option.name
         deleteat!(currentHand, i) #removes the piece at index i from the currentHand array
         break
@@ -62,8 +112,6 @@ function updateBoard(board::Board, move::Move)
 
     #set piece to your color
     getPiece(board, move.targetx, move.targety).color = getCurrentPlayer(board)
-
-    unpromotePiece(getPiece(board, move.targetx, move.targety))
 
 
   #RESIGN

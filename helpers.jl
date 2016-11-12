@@ -1,7 +1,7 @@
 #=
 Helper functions
 =#
-tracePrints = false
+tracePrints = true
 tracePrintKeys = Dict([("ControlFlow", true), ("Example2", false), ("legal", false)])
 
 #Only prints while tracePrints == true, or tracePrintKeys["Key"] == true

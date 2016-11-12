@@ -10,13 +10,16 @@ is connecting on the server we just created, while the connect()
 function connects to a server using the specified method.
 
 "<wincode>:<authString>:<movenum>:<movetype>:<sourcex>:<sourcey>:<targetx>:<targety>:<option>:<cheating>:<targetx2>:<targety2>"
-
 =#
+ip = ARGS[1]
+port = parse(Int, ARGS[2])
 
-#ip=parse(Int, ARGS[1])
-#port = parse(Int, ARGS[2])
-#clientside= connect(port)
-
+function runclient()
+  clientside=connect("$ip", port)
+  println(clientside,"Hello World from the Echo Server")
+  reply = readline(clientside)
+  println("Server message: $reply")
+end
 
 function initializingGame()
   #initializing game wincode=game request (0)
@@ -165,4 +168,5 @@ end
 #The game ends when a client sends a quit code or the server sends one of the termination codes.
 
 #close(clientside)
-initializingGame()
+#initializingGame()
+runclient()
