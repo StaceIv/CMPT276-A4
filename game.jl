@@ -1,40 +1,3 @@
-#= This program starts a GUI, giving the user the options:
-• Start a new game.
-• Continue an old game.
-• Replay a finished game.
-• Quit
-
-Starting a new game gives the following options:
-• Start a game against the AI.
-• Start a game against a human on the same computer.
-• Join a game against a remote program.
-• Host a game, using your AI as the player.
-• Host a game, with a human as the player.
-• Start a new game over email.
-
-When starting a game, the following options should be available:
-
-• Variant.
-• Use time limits.
-• Time limit.
-• Time increment.
-• Difficulty (only if against an AI)
-• Japanese roulette mode. (flip the table on a loss, not on a resignation)
-• Go first.
-• Permit AI to cheat.
-       The following difficulties should be available.
-• Normal.
-• Hard.
-• Suicidal. (The AI plays the worst move possible.)
-• Protracted death. (The AI protects the king, but otherwise plays worst moves possible.)
-• Random AI.
-
-Continuing a game should give the following options:
-• Continue a local game.
-• Take a turn in an email game.
-
-=#
-
 using Blink
 
 ARGS =fill("",6) #create ARGS array to pass parameters to the other julia files.
@@ -57,7 +20,7 @@ load!(startWindow,"GUI/css/startWindow.css")
 sleep(3)
 
 body!(startWindow, "
-
+    
 <h1>Welcome to SHOGI</h1>
 
 <div class='newGame'>
@@ -85,7 +48,7 @@ while status != "exit"
     if status == "newGame"
         println("new Game clicked")
         break
-        #status = @js startWindow resetStatus()
+        #status = @js startWindow resetStatus()    
     end
     if status == "contGame"
         println("continue game clicked")
@@ -100,7 +63,7 @@ while status != "exit"
         break
         #status = @js startWindow resetStatus()
     end
-
+    
 
 end
 
@@ -110,19 +73,19 @@ close(startWindow)
 
 if status == "newGame"
         newGameWindow = Window()
-
+        
         sleep(3)
         load!(newGameWindow,"GUI/js/jquery-1.10.1.min.js")
         load!(newGameWindow,"GUI/js/json3.min.js")
         load!(newGameWindow,"GUI/js/generateBoard.js")
         #load!(newGameWindow,"GUI/css/newGameWindow.css")
-
+        
         sleep(3)
-
+        
         body!(newGameWindow, "
-
+            
                 <h1>Create New Game</h1>
-
+                
                 <div class='container'>
                          <input type='button' onclick='remoteGame()' value='Remote'>
                          <input type='button' onclick='localP()' value='Local(Player)'>
@@ -144,7 +107,7 @@ if status == "newGame"
                     <option>Chu</option>
                     <option>Tenjiku</option>
                   </select>
-                </div>
+                </div>    
 
                 <div class='cheatGame'>
                     <label for='cheatcheckbox'>Cheating:</label>
@@ -155,12 +118,12 @@ if status == "newGame"
                 <div class='timeLimGame'>
                   <label for='timeLimit'>Time Limit:</label>
                   <input type='number' min='0' id='timeLimit' placeholder='Optional'/>
-                </div>
+                </div>    
 
                 <div class='timeIncGame'>
                   <label for='timeInc'>Time Increment:</label>
                   <input type='number' min='0' id='timeInc' placeholder='Optional'/>
-                </div>
+                </div>    
 
                 <div class='difficultyGame'>
                     <label for='gameType'>Game Difficulty:</label>
@@ -171,7 +134,7 @@ if status == "newGame"
                     <option>Protracted death</option>
                     <option>Random AI</option>
                   </select>
-                </div>
+                </div>    
 
                 <div class='flipGame'>
                     <label for='flipcheckbox'>Japanese roulette mode:</label>
@@ -184,15 +147,15 @@ if status == "newGame"
                 <div class='container'>
                   <input type='button' onclick='getValues()' value='Continue'>
                 </div>
-
-
+        
+        
         ")
-
+        
         status =""
         while status != "exit"
             sleep(0.01)
             status = @js newGameWindow statusJS
-
+        
             if status == "continue"
                 println("continue game clicked")
                 @js newGameWindow getValues()
@@ -207,33 +170,32 @@ if status == "newGame"
                 break
                 #status = @js newGameWindow resetStatus()
             end
-
-
+            
+        
         end
-
-
+        
+        
         close(newGameWindow)
-
-
-
-
-
-end
-
-
-
-
-
-
-@printf("Filename: %s\nType: %s\nCheating: %s\nTimelimit: %s\nLimitadd: %s\n",filename,game,cheating=="T"?"on":"off", timelimit, limitadd)
-
+        @printf("Filename: %s\nType: %s\nCheating: %s\nTimelimit: %s\nLimitadd: %s\n",filename,game,cheating=="T"?"on":"off", timelimit, limitadd)
 
   ARGS[1] = filename
   ARGS[2] = game #get first char of string
   ARGS[3] = cheating
   ARGS[4] = timelimit
   ARGS[5] = limitadd
-include("start.jl")
+  include("start.jl")
+
+
+
+
+end
+
+ARGS[1] = filename
+
+
+
+
+
 
 #DISPLAYING BOARD
 w = Window()
@@ -250,9 +212,11 @@ sleep(3)
 
 body!(w, "
 <input type='button' value='Generate current board' onclick='generateTable()' />
+<input type='button' value='Make move' onclick='makeMove()' />
 <input type='button' value='run move.jl' onclick='movejl()' />
+<div id='currentPlayer'></div>
 <div id='dvBHand'> </div>
-<div id='dvTable'z> </div>
+<div id='dvTable'> </div>
 <div id='dvWHand'> </div>
 <input type='button' value='exit' onclick='exit()' />
 ")
@@ -264,6 +228,7 @@ function fillJSBoard(board::Board)
   boardArray = board.boardArray
    # println("current player", getCurrentPlayer(board))
    # printHand(board, BLACK)
+   @js w getPlayer($(getCurrentPlayer(board)))
     for j = BOARD_DIMENSIONS:-1:1
         for i= 1:BOARD_DIMENSIONS
         # add piece to item array in js
@@ -298,7 +263,7 @@ fillJSPlayerHand(board,"Black")
 fillJSBoard(board)
 #opentools(w)
 
-
+tools(w)
 
 @js w generateTable();
 
@@ -318,5 +283,57 @@ if status == "movejl"
   include("move.jl")
   status = @js w resetStatus()
 end
+if status == "makeMove"
+  println("make move clicked")
+  arr = @js w movesArrayJS
+  
+  println(arr)
+  if length(arr) == 2
+  ARGS[2] = split(arr[1],",")[1]
+  ARGS[3] = split(arr[1],",")[2]
+  ARGS[4] = split(arr[2],",")[1]
+  ARGS[5] = split(arr[2],",")[2]
+  ARGS[6] = "F" #CHANGE THIS!!!!!!!!!!!!!!!!
+  elseif length(arr) == 3
+  ARGS[2] = split(arr[1],",")[1]
+  ARGS[3] = split(arr[1],",")[2]
+  ARGS[4] = split(arr[2],",")[1]
+  ARGS[5] = split(arr[2],",")[2]
+  ARGS[6] = "F" #CHANGE THIS!!!!!!!!!!!!!!!!
+  ARGS[7] = split(arr[3],",")[1]
+  ARGS[8] = split(arr[3],",")[2]
+  elseif length(arr) == 4
+  ARGS[2] = split(arr[1],",")[1]
+  ARGS[3] = split(arr[1],",")[2]
+  ARGS[4] = split(arr[2],",")[1]
+  ARGS[5] = split(arr[2],",")[2]
+  ARGS[6] = "F" #CHANGE THIS!!!!!!!!!!!!!!!!
+  ARGS[7] = split(arr[3],",")[1]
+  ARGS[8] = split(arr[3],",")[2]
+  ARGS[9] = split(arr[4],",")[1]
+  ARGS[10]= split(arr[4],",")[2]
+  else
+      @js w alert("INVALID MOVE. REJECTED!")
+      status = @js w resetStatus()
+      continue
+  end
+  println(ARGS)
+  include("move_user_move.jl")
+
+  board = generateCurrentBoard()
+
+  @js w deleteTables()
+  fillJSBoard(board)
+  fillJSPlayerHand(board,"White")
+  fillJSPlayerHand(board,"Black")
+
+
+  @js w movesArrayJS.splice(0)
+  status = @js w resetStatus()
+  @js w generateTable()
+
+end
+
 end
 println("Exit clicked")
+

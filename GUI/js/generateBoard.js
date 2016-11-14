@@ -4,6 +4,12 @@ var item = new Array();
 var whiteHandJS = new Array();
 var blackHandJS = new Array();
 var statusJS; //changed at every function so julia know whats going on.
+var currentPlayer
+var movesArrayJS = new Array();
+function getPlayer(player){
+    currentPlayer = player
+    document.getElementById("currentPlayer").innerHTML = player
+}
 
 function generateTable() {
     statusJS = "generateTable";
@@ -11,6 +17,9 @@ function generateTable() {
     var table = document.createElement('TABLE');
     var tableBlack = document.createElement('TABLE');
     var tableWhite = document.createElement('TABLE');
+    table.id = "Board"
+    tableBlack.id = "BHand"
+    tableWhite.id = "WHand"
     //Get the count of columns.
     var columnCount = boardJS[0].length;
     var colBlackCount = blackHandJS.length;
@@ -21,10 +30,14 @@ function generateTable() {
         for (var j = 0; j < columnCount; j++) {
             
             var cell = row.insertCell(-1);
+            var dragDiv = document.createElement('div');
             var pieceDiv = document.createElement('div');
 
-            cell.className = "cell"
-            cell.id = boardJS[i][j].color +':' + boardJS[i][j].name + ':' + (j+1) +','+Math.abs(i-boardJS.length);
+            cell.className = "element"
+            cell.id =  (j+1) +','+Math.abs(i-boardJS.length);
+            dragDiv.className = "cell"
+            dragDiv.id = boardJS[i][j].color +':' + boardJS[i][j].name + ':' + (j+1) +','+Math.abs(i-boardJS.length);
+            cell.onclick = function(){ moveFunction(this);};
             pieceDiv.className = boardJS[i][j].color +'Piece';
                         
             if(boardJS[i][j].color =="Black"){
@@ -32,21 +45,33 @@ function generateTable() {
                 shogiDiv.innerHTML = '☗'
                 shogiDiv.className = 'Bshogi'
                 pieceDiv.innerHTML = boardJS[i][j].name;
-                cell.draggable = true;
-                cell.appendChild(shogiDiv);
+                dragDiv.draggable = true;
+                dragDiv.appendChild(shogiDiv);
+                dragDiv.appendChild(pieceDiv);
             }
             else if(boardJS[i][j].color =="White"){
                  var shogiDiv = document.createElement('div');
                  shogiDiv.innerHTML = '☖'
                  shogiDiv.className = 'Wshogi'
                  pieceDiv.innerHTML = boardJS[i][j].name;
-                 cell.draggable = true;
-                 cell.appendChild(shogiDiv);
+                 dragDiv.draggable = true;
+                 dragDiv.appendChild(shogiDiv);
+                 dragDiv.appendChild(pieceDiv);
+            }
+            else{
+                  var shogiDiv = document.createElement('div');
+                 shogiDiv.innerHTML = '.'
+                 shogiDiv.className = 'emptyPiece'
+                 pieceDiv.innerHTML = '.';
+                 dragDiv.draggable = false;
+                 dragDiv.appendChild(shogiDiv);
+                 dragDiv.appendChild(pieceDiv);
             }
             if(boardJS[i][j].name == "k"){
                 pieceDiv.id = "King"
             }
-            cell.appendChild(pieceDiv);
+            
+            cell.appendChild(dragDiv);
         }
     }
     //add data to player hands tables
@@ -122,6 +147,22 @@ function generateTable() {
     dvWHand.innerHTML = '';
     dvWHand.appendChild(tableWhite);
 }
+
+function deleteTables(){
+    console.log("updating")
+    document.getElementById("dvBHand").removeChild(document.getElementById("BHand"))
+    document.getElementById("dvTable").removeChild(document.getElementById("Board"))
+    document.getElementById("dvWHand").removeChild(document.getElementById("WHand"))
+     boardJS.splice(0)
+     item.splice(0)
+     whiteHandJS.splice(0)
+     blackHandJS.splice(0)
+    
+}
+
+
+
+
 function movejl(){
     statusJS = "movejl";
 }
@@ -199,6 +240,37 @@ function getValues(){
     
     statusJS = "continue"
 }
+
+
+
+//FOR MOVING PIECES
+
+var userMoves = 0 
+/*
+    0 for source
+    1 for 1st destination
+    2 for 2nd destination
+    3 for 3rd destination
+*/
+
+
+function moveFunction(cell){
+    var tempArr = new Array();
+    movesArrayJS.push(cell.id)
+
+    
+
+    console.log(movesArrayJS)
+
+}
+
+function makeMove(){
+    statusJS = "makeMove"
+}
+
+
+
+
 
 
 //FOR ALL WINDOWS

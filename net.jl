@@ -13,10 +13,11 @@ function connects to a server using the specified method.
 =#
 ip = ARGS[1]
 port = parse(Int, ARGS[2])
+message = ARGS[3]
 
 function runclient()
   clientside=connect("$ip", port)
-  println(clientside,"Hello World from the Echo Server")
+  println(clientside,message)
   reply = readline(clientside)
   println("Server message: $reply")
 end
