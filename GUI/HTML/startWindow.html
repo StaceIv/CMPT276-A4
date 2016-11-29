@@ -9,26 +9,50 @@
 
 </head>
 
-<body>
-    
-    
+<body class="blink-show">
+
+
 <h1>Welcome to SHOGI</h1>
 
-<div class="newGame">
-  <input type="button" onclick="startNewGame()" value="Start new game">
-</div>
-<div class="contGame">
-  <input type="text" placeholder="Enter file name"/>
-  <input type="button" onclick="contGame()" value="Continue game">
-</div>
-<div class="replayGame">
-  <input type="text" placeholder="Enter file name"/>
-  <input type="button" onclick="replayGame()" value="Replay game">
-</div>
-<div class="quitGame">
-  <input type="button" onclick="exit()" value="Quit">
+
+<div id="holder">
+
+<div class="button" onclick="startNewGame()">
+    <p class="btnText">NEW GAME</p>
+    <div class="btnTwo">
+      <p class="btnText2">GO!</p>
+    </div>
+ </div>
+            <form>
+                <div class='group'>
+         <input type='text' id='contText' placeholder='File Name'><span class='highlight'></span><span class='bar'></span>
+<!--         <label>File Name</label>-->
+       </div>
+
+</form>
+    <div class="button" onclick="contGame()">
+    <p class="btnText">Continue Game</p>
+    <div class="btnTwo">
+      <p class="btnText2">GO!</p>
+    </div>
+ </div>
+
+    <div class="button" onclick="replayGame()">
+    <p class="btnText">Replay Game</p>
+    <div class="btnTwo">
+      <p class="btnText2">GO!</p>
+    </div>
+ </div>
+
+
+<div class="button" onclick="exit()">
+    <p class="btnText">QUIT</p>
+    <div class="btnTwo">
+      <p class="btnText2">X</p>
+    </div>
+ </div>
+
+
 </div>
 
-</body>
-
-</html>
+    </body></html>

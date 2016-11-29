@@ -1,5 +1,4 @@
 
-
 ##Pieces
 type Piece
     color::AbstractString
@@ -16,214 +15,257 @@ function ==(a::Piece, b::Piece)
   return a.color == b.color && a.name == b.name
 end
 
+##############DATABASE NAMES########################
+
 #Standard
-const Bishop = "bishop"
-const GoldGeneral = "gold_general"
-const King =  "king"
-const Lance = "lance"
-const Knight = "knight"
-const Pawn =  "prince"
-const Rook = "rook"
-const SilverGeneral = "silver_general"
+const DBishop = "bishop"
+const DGoldGeneral = "gold general"
+const DKing =  "king"
+const DLance = "lance"
+const DKnight = "knight"
+const DPawn =  "pawn"
+const DRook = "rook"
+const DSilverGeneral = "silver general"
 #Chu shogi
-const ReverseChariot = "reverse_chariot"
-const CopperGeneral = "copper_general"
-const DragonKing = "dragon_king"
-const DrunkenElephant = "drunken_elephant"
-const FerociousLeopard = "ferocious_leopard"
-const DragonHorse = "dragon_horse"
-const Lion = "lion"
-const SideMover = "side_mover"
-const Kirin = "kirin"
-const GoBetween = "go_between"
-const BlindTiger = "blind_tiger"
-const Queen = "queen"
-const VerticalMover = "vertical_mover"
-const Phoenix = "phoenix"
+const DReverseChariot = "reverse chariot"
+const DCopperGeneral = "copper general"
+const DDragonKing = "dragon king"
+const DDrunkenElephant = "drunken elephant"
+const DFerociousLeopard = "ferocious leopard"
+const DDragonHorse = "dragon horse"
+const DLion = "lion"
+const DSideMover = "side mover"
+const DKirin = "kirin"
+const DGoBetween = "go between"
+const DBlindTiger = "blind tiger"
+const DQueen = "queen"
+const DVerticalMover = "vertical mover"
+const DPhoenix = "phoenix"
 #Tenjiku Shogi
-const BishopGeneral = "bishop_general"
-const ChariotSoldier = "chariot_soldier"
-const Dog = "dog"
-const FireDemon = "fire_demon"
-const FreeEagle = "free_eagle"
-const GreatGeneral = "great_general"
-const HornedFalcon = "horned_falcon"
-const IronGeneral = "iron_general"
-const LionHawk = "lion_hawk"
-const RookGeneral = "rook_general"
-const SideSoldier = "side_soldier"
-const SoaringEagle = "soaring_eagle"
-const VerticalSoldier = "vertical_soldier"
-const ViceGeneral = "vice_general"
-const WaterBuffalo = "water_buffalo"
+const DBishopGeneral = "bishop general"
+const DChariotSoldier = "chariot soldier"
+const DDog = "dog"
+const DFireDemon = "fire demon"
+const DFreeEagle = "free eagle"
+const DGreatGeneral = "great general"
+const DHornedFalcon = "horned falcon"
+const DIronGeneral = "iron general"
+const DLionHawk = "lion hawk"
+const DRookGeneral = "rook general"
+const DSideSoldier = "side soldier"
+const DSoaringEagle = "soaring eagle"
+const DVerticalSoldier = "vertical soldier"
+const DViceGeneral = "vice general"
+const DWaterBuffalo = "water buffalo"
 
 #Standard                                           S/C/T
-const PBishop = "promoted_bishop"                  #Dragon Horse
-const PLance = "promoted_lance"                    #Gold General/White Horse
-const PKnight = "promoted_knight"                  #Gold General/ /SIde Soldier
-const PPawn =  "promoted_pawn"                     #Gold General
-const PRook = "promoted_rook"                      #Dragon King
-const PSilverGeneral = "promoted_silver_general"    #Gold General/Vertical Mover
+const DPBishop = "promoted bishop"                  #Dragon Horse
+const DPLance = "promoted lance"                    #Gold General/White Horse
+const DPKnight = "promoted knight"                  #Gold General/ /SIde Soldier
+const DPPawn =  "promoted pawn"                     #Gold General
+const DPRook = "promoted rook"                      #Dragon King
+const DPSilverGeneral = "promoted silver general"    #Gold General/Vertical Mover
 #Chu Shogi
-const PReverseChariot = "promoted_reverse_chariot"  #Whale
-const PCopperGeneral = "promoted_copper_general"    #Side Mover
-const PDragonKing = "promoted_dragon_king"          #Soaring Eagle
-const PDrunkenElephant = "promoted_drunken_elephant"#Prince
-const PFerociousLeopard = "promoted_ferocious_lepard"     #Bishop
-const PDragonHorse = "promoted_dragon_horse"          #Horned Falcon
-const PSideMover = "promoted_side_mover"            #Free Boar
-const PKirin = "promoted_kirin"                #Lion
-const PGoBetween = "promoted_go_between"            #Drunken Elephant
-const pGoldGeneral = "promoted_gold_general"        #Rook
-const PBlindTiger = "promoted_blind_tiger"           #Flying Stag
-const PVerticalMover = "promoted_vertical_mover"        #Flying Ox
-const PPhoenix = "promoted_phoenix"              #Queen
+const DPReverseChariot = "promoted reverse chariot"  #Whale
+const DPCopperGeneral = "promoted copper general"    #Side Mover
+const DPDragonKing = "promoted dragon king"          #Soaring Eagle
+const DPDrunkenElephant = "promoted drunken elephant"#Prince
+const DPFerociousLeopard = "promoted ferocious lepard"     #Bishop
+const DPDragonHorse = "promoted dragon horse"          #Horned Falcon
+const DPSideMover = "promoted side mover"            #Free Boar
+const DPKirin = "promoted kirin"                #Lion
+const DPGoBetween = "promoted go between"            #Drunken Elephant
+const DPGoldGeneral = "promoted gold general"        #Rook
+const DPBlindTiger = "promoted blind tiger"           #Flying Stag
+const DPVerticalMover = "promoted vertical mover"        #Flying Ox
+const DPPhoenix = "promoted phoenix"              #Queen
 #Tenjiku Shogi
-const PBishopGeneral = "promoted_bishop_general"  #Vice General
-const PChariotSoldier = "promoted_bishop_general"   #Heavenly Tetrarch
-const PDog = "promoted_dog"                       #Multi General
-const PHornedFalcon = "promoted_horned_falcon"    #Bishop General
-const PIronGeneral = "promoted_iron_general"      #Vertical Soldier
-const PLion = "promoted_lion"                     #Lion Hawk
-const PQueen = "promoted_queen"                   #Free Eagle
-const PRookGeneral = "promoted_rook_general"      #Great General
-const PSideSoldier = "promoted_side_soldier"      #Water Buffalo
-const PSoaringEagle = "promoted_soaring_eagle"    #Rook General
-const PVerticalSoldier = "promoted_vertical_soldier"    #Chariot Soldier
-const PWaterBuffalo = "promoted_water_buffalo"     #Fire Demon
+const DPBishopGeneral = "promoted bishop general"  #Vice General
+const DPChariotSoldier = "promoted chariot soldier"   #Heavenly Tetrarch
+const DPDog = "promoted dog"                       #Multi General
+const DPHornedFalcon = "promoted horned falcon"    #Bishop General
+const DPIronGeneral = "promoted iron general"      #Vertical Soldier
+const DPLion = "promoted lion"                     #Lion Hawk
+const DPQueen = "promoted queen"                   #Free Eagle
+const DPRookGeneral = "promoted rook general"      #Great General
+const DPSideSoldier = "promoted side soldier"      #Water Buffalo
+const DPSoaringEagle = "promoted soaring eagle"    #Rook General
+const DPVerticalSoldier = "promoted vertical soldier"    #Chariot Soldier
+const DPWaterBuffalo = "promoted water buffalo"     #Fire Demon
 
+############NAMES###################
+#Standard
+const Bishop = "b"
+const GoldGeneral = "g"
+const King =  "k"
+const Lance = "l"
+const Knight = "n"
+const Pawn =  "p"
+const Rook = "r"
+const SilverGeneral = "s"
+#Chu shogi
+const ReverseChariot = "rc"
+const CopperGeneral = "c"
+const DragonKing = "dk"
+const DrunkenElephant = "de"
+const FerociousLeopard = "fl"
+const DragonHorse = "dh"
+const Lion = "ln"
+const SideMover = "sm"
+const Kirin = "kr"
+const GoBetween = "o"
+const BlindTiger = "bt"
+const Queen = "q"
+const VerticalMover = "vm"
+const Phoenix = "ph"
+#Tenjiku Shogi
+const BishopGeneral = "bg"
+const ChariotSoldier = "cs"
+const Dog = "d"
+const FireDemon = "fd"
+const FreeEagle = "fe"
+const GreatGeneral = "gg"
+const HornedFalcon = "hf"
+const IronGeneral = "i"
+const LionHawk = "lh"
+const RookGeneral = "rg"
+const SideSoldier = "ss"
+const SoaringEagle = "se"
+const VerticalSoldier = "vs"
+const ViceGeneral = "vg"
+const WaterBuffalo = "wb"
+
+#Standard                                           S/C/T
+const PBishop = "B"                  #Dragon Horse
+const PLance = "L"                    #Gold General/White Horse
+const PKnight = "N"                  #Gold General/ /SIde Soldier
+const PPawn =  "P"                     #Gold General
+const PRook = "R"                      #Dragon King
+const PSilverGeneral = "S"    #Gold General/Vertical Mover
+#Chu Shogi
+const PReverseChariot = "RC"  #Whale
+const PCopperGeneral = "C"    #Side Mover
+const PDragonKing = "DK"          #Soaring Eagle
+const PDrunkenElephant = "DE"#Prince
+const PFerociousLeopard = "FL"     #Bishop
+const PDragonHorse = "DH"          #Horned Falcon
+const PSideMover = "SM"            #Free Boar
+const PKirin = "KR"                #Lion
+const PGoBetween = "O"            #Drunken Elephant
+const PGoldGeneral = "G"        #Rook
+const PBlindTiger = "BT"           #Flying Stag
+const PVerticalMover = "VM"        #Flying Ox
+const PPhoenix = "PH"              #Queen
+#Tenjiku Shogi
+const PBishopGeneral = "BG"  #Vice General
+const PChariotSoldier = "CS"   #Heavenly Tetrarch
+const PDog = "D"                       #Multi General
+const PHornedFalcon = "HF"    #Bishop General
+const PIronGeneral = "I"      #Vertical Soldier
+const PLion = "LN"                     #Lion Hawk
+const PQueen = "Q"                   #Free Eagle
+const PRookGeneral = "RG"      #Great General
+const PSideSoldier = "SS"      #Water Buffalo
+const PSoaringEagle = "SE"    #Rook General
+const PVerticalSoldier = "VS"    #Chariot Soldier
+const PWaterBuffalo = "WB"     #Fire Demon
+
+
+######ARRAYS FOR PROMOTING################
+#=Each array is the same size, and each element has a corresponding element in another array
+Example: arrDatabaseNames[6] = DPawn = "pawn"
+         arrDatabaseProNames[6] = DPPawn = "promoted_pawn"
+         arrAbbNames[6] = Pawn = "p"
+         arrAbbProNames[6] = PPawn = "P"
+=#
+
+
+
+arrDatabaseNames = [#Standard
+                    DBishop, DGoldGeneral, DKing, DLance, DKnight, DPawn, DRook, DSilverGeneral,
+                    #Chu
+                    DReverseChariot, DCopperGeneral, DDragonKing, DDrunkenElephant, DFerociousLeopard, DDragonHorse, DLion, DSideMover, DKirin, DGoBetween,
+                    DBlindTiger, DQueen, DVerticalMover, DPhoenix,
+                    #ten
+                    DBishopGeneral, DChariotSoldier, DDog, DFireDemon, DFreeEagle, DGreatGeneral, DHornedFalcon, DIronGeneral, DLionHawk, DRookGeneral, DSideSoldier,
+                    DSoaringEagle, DVerticalSoldier, DViceGeneral, DWaterBuffalo,
+                    ]
+arrDatabaseProNames = [#standard
+                    DPBishop, DPGoldGeneral, DKing, DPLance, DPKnight, DPPawn, DPRook, DPSilverGeneral,
+                    #chu
+                    DPReverseChariot, DPCopperGeneral, DPDragonKing, DPDrunkenElephant, DPFerociousLeopard, DPDragonHorse, DPLion, DPSideMover, DPKirin, DPGoBetween,
+                    DPBlindTiger, DPQueen, DPVerticalMover, DPPhoenix,
+                    #ten
+                    DPBishopGeneral, DPChariotSoldier, DPDog, DFireDemon, DFreeEagle, DGreatGeneral, DPHornedFalcon, DPIronGeneral, DLionHawk, DPRookGeneral, DPSideSoldier,
+                    DPSoaringEagle, DPVerticalSoldier, DViceGeneral, DPWaterBuffalo
+                    ]
+
+arrAbbNames = [#Standard
+                Bishop, GoldGeneral, King, Lance, Knight, Pawn, Rook, SilverGeneral,
+                #Chu
+                ReverseChariot, CopperGeneral, DragonKing, DrunkenElephant, FerociousLeopard, DragonHorse, Lion, SideMover, Kirin, GoBetween,
+                BlindTiger, Queen, VerticalMover, Phoenix,
+                #ten
+                BishopGeneral, ChariotSoldier, Dog, FireDemon, FreeEagle, GreatGeneral, HornedFalcon, IronGeneral, LionHawk, RookGeneral, SideSoldier,
+                SoaringEagle, VerticalSoldier, ViceGeneral, WaterBuffalo,
+                ]
+arrAbbProNames = [#standard
+                PBishop, PGoldGeneral, King, PLance, PKnight, PPawn, PRook, PSilverGeneral,
+                #chu
+                PReverseChariot, PCopperGeneral, PDragonKing, PDrunkenElephant, PFerociousLeopard, PDragonHorse, PLion, PSideMover, PKirin, PGoBetween,
+                PBlindTiger, PQueen, PVerticalMover, PPhoenix,
+                #ten
+                PBishopGeneral, PChariotSoldier, PDog, FireDemon, FreeEagle, GreatGeneral, PHornedFalcon, PIronGeneral, LionHawk, PRookGeneral, PSideSoldier,
+                PSoaringEagle, PVerticalSoldier, ViceGeneral, PWaterBuffalo
+                ]
+
+#####PROMOTION FUNCTIONS##########
 
 function promotePiece(piece::Piece)
-  if piece.name == Pawn
-    piece.name = PPawn
-  elseif piece.name == Rook
-    piece.name = PRook
-  elseif piece.name == Bishop
-    piece.name = PBishop
-  elseif piece.name == Lance
-    piece.name = PLance
-  elseif piece.name == Knight
-    piece.name = PKnight
-  elseif piece.name == SilverGeneral
-    piece.name = PSilverGeneral
-  #chu
-  elseif piece.name == ReverseChariot
-    piece.name = PReverseChariot
-  elseif piece.name == CopperGeneral
-    piece.name = PCopperGeneral
-  elseif piece.name == DragonKing
-    piece.name = PDragonKing
-  elseif piece.name == DrunkenElephant
-    piece.name = PDrunkenElephant
-  elseif piece.name == FerociousLeopard
-    piece.name = PFerociousLeopard
-  elseif piece.name == DragonHorse
-    piece.name = PDragonHorse
-  elseif piece.name == SideMover
-    piece.name = PSideMover
-  elseif piece.name == VerticalMover
-    piece.name = PVerticalMover
-  elseif piece.name == GoBetween
-    piece.name = PGoBetween
-  elseif piece.name == BlindTiger
-    piece.name = PBlindTiger
-  elseif piece.name == Phoenix
-    piece.name = PPhoenix
-  elseif piece.name == Kirin
-    piece.name = PKirin
-  elseif piece.name == GoldGeneral
-    piece.name = PGoldGeneral
-  #Tenjiku
-  elseif piece.name == BishopGeneral
-    piece.name = PBishopGeneral
-  elseif piece.name == ChariotSoldier
-    piece.name = PChariotSoldier
-  elseif piece.name == Dog
-    piece.name = PDog
-  elseif piece.name == HornedFalcon
-    piece.name = PHornedFalcon
-  elseif piece.name == IronGeneral
-    piece.name = PIronGeneral
-  elseif piece.name == Lion
-    piece.name = PLion
-  elseif piece.name == Queen
-    piece.name = PQueen
-  elseif piece.name == RookGeneral
-    piece.name = PRookGeneral
-  elseif piece.name == SideSoldier
-    piece.name = PSideSoldier
-  elseif piece.name == SoaringEagle
-    piece.name = PSoaringEagle
-  elseif piece.name == VerticalSoldier
-    piece.name = PVerticalSoldier
-  elseif piece.name == WaterBuffalo
-    piece.name = PWaterBuffalo
+  for i = 1:length(arrAbbNames)
+    if piece.name == arrAbbNames[i]
+      piece.name = arrAbbProNames[i]
+    end
   end
 end
 function unpromotePiece(piece::Piece)
-  if piece.name == PPawn
-    piece.name = Pawn
-  elseif piece.name == PRook
-    piece.name = Rook
-  elseif piece.name == PBishop
-    piece.name = Bishop
-  elseif piece.name == PLance
-    piece.name = Lance
-  elseif piece.name == PKnight
-    piece.name = Knight
-  elseif piece.name == PSilverGeneral
-    piece.name = SilverGeneral
-    #chu
-  elseif piece.name == PReverseChariot
-    piece.name = ReverseChariot
-  elseif piece.name == PCopperGeneral
-    piece.name = CopperGeneral
-  elseif piece.name == PDragonKing
-    piece.name = DragonKing
-  elseif piece.name == PDrunkenElephant
-    piece.name = DrunkenElephant
-  elseif piece.name == PFerociousLeopard
-    piece.name = FerociousLeopard
-  elseif piece.name == PDragonHorse
-    piece.name = DragonHorse
-  elseif piece.name == PSideMover
-    piece.name = SideMover
-  elseif piece.name == PVerticalMover
-    piece.name = VerticalMover
-  elseif piece.name == PGoBetween
-    piece.name = GoBetween
-  elseif piece.name == PBlindTiger
-    piece.name = BlindTiger
-  elseif piece.name == PPhoenix
-    piece.name = Phoenix
-  elseif piece.name == PKirin
-    piece.name = Kirin
-  elseif piece.name == PGoldGeneral
-    piece.name = GoldGeneral
-  #Tenjiku
-  elseif piece.name == PBishopGeneral
-    piece.name = BishopGeneral
-  elseif piece.name == PChariotSoldier
-    piece.name = ChariotSoldier
-  elseif piece.name == PDog
-    piece.name = Dog
-  elseif piece.name == PHornedFalcon
-    piece.name = HornedFalcon
-  elseif piece.name == PIronGeneral
-    piece.name = IronGeneral
-  elseif piece.name == PLion
-    piece.name = Lion
-  elseif piece.name == PQueen
-    piece.name = Queen
-  elseif piece.name == PRookGeneral
-    piece.name = RookGeneral
-  elseif piece.name == PSideSoldier
-    piece.name = SideSoldier
-  elseif piece.name == PSoaringEagle
-    piece.name = SoaringEagle
-  elseif piece.name == PVerticalSoldier
-    piece.name = VerticalSoldier
-  elseif piece.name == PWaterBuffalo
-    piece.name = WaterBuffalo
+  for i = 1:length(arrAbbNames)
+    if piece.name == arrAbbProNames[i]
+      piece.name = arrAbbNames[i]
+    end
+  end
+end
+
+function getAbbName(name::AbstractString)
+  result = nothing
+  for i = 1:length(arrAbbNames)
+    if name == arrDatabaseNames[i]
+      result = arrAbbNames[i]
+    elseif name == arrDatabaseProNames[i]
+      result = arrAbbProNames[i]
+    end
+  end
+
+  if result != nothing
+    return result
+  else
+  #  assert(false)
+  end
+end
+
+function getDatabaseName(name::AbstractString)
+  result = nothing
+  for i = 1:length(arrAbbNames)
+    if name == arrAbbNames[i]
+      result = arrDatabaseNames[i]
+    elseif name == arrAbbProNames[i]
+      result = arrDatabaseProNames[i]
+    end
+  end
+
+  if result != nothing
+    return result
+  else
+    assert(false)
   end
 end

@@ -1,0 +1,17 @@
+
+css improvements : Formatting, changing buttons, background colour
+Visualize step: Shows next possible move when hovering over a piece
+Tips Button: A clickable button that suggests tips. Diogo, has this been done yet??
+
+GUI:
+
+- Colours have been added, buttons made to be asthetically appealing.
+- GUI is set up in a way that should be easier for the user to naviagate
+
+css improvements : Formatting, changing buttons, background colour
+Visualize step: Shows next possible move when hovering over a piece
+Tips Button: A clickable button that suggests tips. Diogo, has this been done yet??
+Background changes: Will be activated with a button Toren, has this been done yet?
+
+start button
+css improvements

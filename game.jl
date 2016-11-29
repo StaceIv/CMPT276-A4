@@ -1,5 +1,245 @@
 using Blink
 
+# "<request game>: <standard shogi>: <no cheating>: <100 seconds>: <10 seconds per turn>"
+function initialization(ip, port, cheating, timelimit, limitadd, game)
+  #global clientside
+  global authString
+
+  moveNumber = 1
+
+  port = parse(Int, port)
+  global clientside = connect("$ip", port) #connects client to server
+  message = "0:$game:$cheating:$timelimit:$limitadd"
+  println("-----------------------------------------------------SIX")
+  println(clientside, message)          # Sends message to server
+  reply = readline(clientside)          # Reply from server
+
+  println("Server message: $reply")
+  payload = split(reply,":")
+  authString = payload[2]
+
+  println("My auth string: $authString")
+
+  println("Connected")
+  println("Server message: $reply")
+
+end
+
+#=
+  This updates what we get from the server to the board.
+  Not sure - but it may just take the opponents moves into account??
+=#
+function parserOfMessage(reply)
+
+#=
+  port = parse(Int, port)
+  clientside = connect("$ip", port) #connects client to server
+
+  reply = readline(clientside) #Reply from server
+=#
+
+  someMove = split(reply,":")
+
+  sourcex = someMove[5]
+  sourcey = someMove[6]
+  targetx = someMove[7]
+  targety = someMove[8]
+
+  promotion = someMove[9]
+  cheating = someMove[10]
+
+  targetx2 = someMove[11]
+  targety2 = someMove[12]
+
+  targetx3 = someMove[13]
+  targety3 = someMove[14]
+
+  resetArgs()
+
+  push!(ARGS, sourcex)
+  push!(ARGS, sourcey)
+  push!(ARGS, targetx)
+  push!(ARGS, targety)
+  push!(ARGS, promotion)
+
+  if targetx2 != 0
+    push!(ARGS, targetx2)
+    push!(ARGS, targety2)
+  end
+  if targetx3 != 0
+    push!(ARGS, targetx3)
+    push!(ARGS, targety3)
+  end
+
+  if someMove[4] == 1
+    include("move_user_move.jl")
+  elseif someMove[4] == 2
+    include("move_user_drop.jl")
+  else
+    include("move_user_resign.jl")
+  end
+
+  updateTable()
+end
+
+#=
+function getServerPacket(ip, port)
+  port = parse(Int, port)
+  clientside = connect("$ip", port)
+
+  fromServer = readline(clientside)
+  println(fromServer)
+  #parserOfMessage(fromServer)
+  return fromServer
+end
+=#
+
+#only for making moves
+function setNetPacket(ip, port, moveNum, as, sourcex, sourcey, moveType, targetx, targety, option, cheating, targetx2, targety2, targetx3, targety3)
+
+  wincode = 2
+  authString = as
+  mn = moveNum
+  typeOfMove = moveType
+  x = sourcex
+  y = sourcey
+  x1 = targetx
+  y1 = targety
+  promoted = option
+  cheat = cheating
+  x2 = targetx2
+  y2 = targety2
+  x3 = targetx3
+  y3 = targety3
+
+
+  payload = "$wincode:$authString:$mn:$typeOfMove:$x:$y:$x1:$y1:$promoted:$cheat:$x2:$y2:$x3:$y3\n"
+#  payload = "2:$authString:1:1:5:9:4:8:F:0:0:0:0:0"
+  return payload
+
+#  println(payload)
+#  println("11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111")
+
+#  port = parse(Int, port)
+#  clientside = connect("$ip", port)
+
+#  println(clientside, payload)
+  #return payload
+
+#  fromServer = readline(clientside)   # Read reply from server?????????????????????????? TODO
+  #println(fromServer)                 # Print reply from server, which should be next move??? Not needed?? TODO
+#  return fromServer #  TODO - Stacey, should it do this?????????????????????????????????? Return the server reply then etc?
+  #Just return the message from server, don't call parser here.
+end
+
+
+#Getting move info from the database, FOR AI only
+#Sending a move
+function setNetPacketDB(ip, port, moveNum, as, filename)
+  db = SQLite.DB(filename)
+  #Always making a move
+  wincode = 2
+  authString = as
+  mn = moveNum
+  tOM = SQLite.query(db, "SELECT move_type FROM moves WHERE move_number = $moveNum;")
+  typeOfMove=get(tOM[1][1])
+  if typeOfMove =="move"
+    typeOfMove = 1
+  elseif typeOfMove =="drop"
+    typeOfMove = 2
+  elseif typeOfMove == "resign"
+    typeOfMove = 3
+  end
+  sourcex = SQLite.query(db, "SELECT sourcex FROM moves WHERE move_number = $moveNum;")
+  x = get(sourcex[1][1])
+  sourcey = SQLite.query(db, "SELECT sourcey FROM moves WHERE move_number = $moveNum;")
+  y = get(sourcey[1][1])
+  targetx = SQLite.query(db, "SELECT targetx FROM moves WHERE move_number = $moveNum;")
+  x1 = get(targetx[1][1])
+  targety = SQLite.query(db, "SELECT targety FROM moves WHERE move_number = $moveNum;")
+  y1 = get(targety[1][1])
+  option = SQLite.query(db, "SELECT option FROM moves WHERE move_number = $moveNum;")
+  if typeof(option[1][1])!= Nullable{Any}
+    # ! or abrv of piece dropped
+      promoted = get(option[1][1])
+  else
+    promoted= 0
+  end
+  #AI never cheats
+  cheat = 0
+  #these might not exits
+  targetx2 = SQLite.query(db, "SELECT targetx2 FROM moves WHERE move_number = $moveNum;")
+  if typeof(targetx2[1][1])!= Nullable{Any}
+    # ! or abrv of piece dropped
+    x2 = get(option[1][1])
+  else
+    x2 = 0
+  end
+  targety2 = SQLite.query(db, "SELECT targety2 FROM moves WHERE move_number = $moveNum;")
+  if typeof(targety2[1][1])!= Nullable{Any}
+    # ! or abrv of piece dropped
+    y2 = get(option[1][1])
+  else
+    y2 = 0
+  end
+  targetx3 = SQLite.query(db, "SELECT targetx3 FROM moves WHERE move_number = $moveNum;")
+  if typeof(targetx3[1][1])!= Nullable{Any}
+    # ! or abrv of piece dropped
+    x3 = get(targetx3[1][1])
+  else
+    x3 = 0
+  end
+  targety3 = SQLite.query(db, "SELECT targety3 FROM moves WHERE move_number = $moveNum;")
+  if typeof(targety3[1][1])!= Nullable{Any}
+    # ! or abrv of piece dropped
+    y3 = get(targety3[1][1])
+  else
+    y3 = 0
+  end
+
+  payload = ("$wincode:$authString:$mn:$typeOfMove:$x:$y:$x1:$y1:$promoted:$cheat:$x2:$y2:$x3:$y3")
+  println( payload)
+  #return payload
+  port = parse(Int, port)
+  clientside = connect("$ip", port)
+
+  println(clientside, payload)
+
+end
+
+
+#only for making moves
+function setNetPacketResign(ip, port, moveNum, as, sourcex, sourcey, moveType, targetx, targety, option, cheating, targetx2, targety2, targetx3, targety3)
+
+  wincode = 1
+  authString = as
+  mn = moveNum
+  typeOfMove = moveType
+  x = sourcex
+  y = sourcey
+  x1 = targetx
+  y1 = targety
+  promoted = option
+  cheat = cheating
+  x2 = targetx2
+  y2 = targety2
+  x3 = targetx3
+  y3 = targety3
+
+  payload = ("$wincode:$authString:$mn:$typeOfMove:$x:$y:$x1:$y1:$promoted:$cheat:$x2:$y2:$x3:$y3")
+
+  println(payload)
+  #println("11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111")
+
+  port = parse(Int, port)
+  clientside = connect("$ip", port)
+
+  println(clientside, payload)
+  #return payload
+end
+
+
+
 ARGS =fill("",6) #create ARGS array to pass parameters to the other julia files.
 filename =""
 game =""
@@ -9,7 +249,11 @@ timelimit=""
 limitadd=""
 gameDifficulty = ""
 filp = ""
-
+goFirst =""
+gameChosen = ""
+ip = ""
+port = ""
+reply =""
 startWindow = Window()
 sleep(3)
 load!(startWindow,"GUI/js/jquery-1.10.1.min.js")
@@ -18,24 +262,53 @@ load!(startWindow,"GUI/js/generateBoard.js")
 load!(startWindow,"GUI/css/startWindow.css")
 
 sleep(3)
+tools(startWindow)
 
 body!(startWindow, "
-    
+
+
+
 <h1>Welcome to SHOGI</h1>
 
-<div class='newGame'>
-  <input type='button' onclick='startNewGame()' value='Start new game'>
-</div>
-<div class='contGame'>
-  <input type='text' id='contText' placeholder='Enter file name'/>
-  <input type='button' onclick='contGame()' value='Continue game'>
-</div>
-<div class='replayGame'>
-  <input type='text' id='replayText' placeholder='Enter file name'/>
-  <input type='button' onclick='replayGame()' value='Replay game'>
-</div>
-<div class='quitGame'>
-  <input type='button' onclick='exit()' value='Quit'>
+
+<div id='holder'>
+
+<div class='button' onclick='startNewGame()'>
+    <p class='btnText'>NEW GAME</p>
+    <div class='btnTwo'>
+      <p class='btnText2'>GO!</p>
+    </div>
+ </div>
+            <form>
+                <div class='group'>
+         <input type='text' id='fileText' placeholder='File Name'><span class='highlight'></span><span class='bar'></span>
+        <!--   <label>File Name</label> -->
+       </div>
+
+</form>
+    <div class='button' onclick='contGame()'>
+    <p class='btnText'>Continue Game</p>
+    <div class='btnTwo'>
+      <p class='btnText2'>GO!</p>
+    </div>
+ </div>
+
+    <div class='button' onclick='replayGame()'>
+    <p class='btnText'>Replay Game</p>
+    <div class='btnTwo'>
+      <p class='btnText2'>GO!</p>
+    </div>
+ </div>
+
+
+<div class='button' onclick='exit()'>
+    <p class='btnText'>QUIT</p>
+    <div class='btnTwo'>
+      <p class='btnText2'>X</p>
+    </div>
+ </div>
+
+
 </div>
 
 
@@ -48,7 +321,7 @@ while status != "exit"
     if status == "newGame"
         println("new Game clicked")
         break
-        #status = @js startWindow resetStatus()    
+        #status = @js startWindow resetStatus()
     end
     if status == "contGame"
         println("continue game clicked")
@@ -63,99 +336,352 @@ while status != "exit"
         break
         #status = @js startWindow resetStatus()
     end
-    
+
 
 end
 
+if status == "exit"
+  quit()
+end
 
 close(startWindow)
+# # TESTING STUFF
+
+# if status == "contGame"
+#     testingWindow = Window()
+#     sleep(3)
+#     load!(testingWindow,"GUI/js/jquery-1.10.1.min.js")
+#     load!(testingWindow,"GUI/js/json3.min.js")
+#     load!(testingWindow,"GUI/js/generateBoard.js")
+#     load!(testingWindow,"GUI/css/test.css")
+
+#     sleep(3)
+#     tools(testingWindow)
+
+#     body!(testingWindow, "
+
+#         <form>
+#       <div class='group'>
+#         <input type='text' id='contText'><span class='highlight'></span><span class='bar'></span>
+#         <label>Name</label>
+#       </div>
+#       <div class='group'>
+#         <input type='email'><span class='highlight'></span><span class='bar'></span>
+#         <label>Email</label>
+#       </div>
+#         <div class='button' onclick='contGame2()'>
+#         <p class='btnText'>Continue Game</p>
+#         <div class='btnTwo'>
+#           <p class='btnText2'>GO!</p>
+#         </div>
+#      </div>
+#     </form>
+
+
+#     ")
+
+#     status =""
+#     while status != "exit"
+#         sleep(0.01)
+#         status = @js testingWindow statusJS
+#         if status == "newGame"
+#             println("new Game clicked")
+#             break
+#             #status = @js testingWindow resetStatus()
+#         end
+#         if status == "contGame"
+#             println("continue game clicked")
+#             filename = @js testingWindow contGame()
+#             break
+#             #status = @js testingWindow resetStatus()
+#         end
+
+#         if status == "replayGame"
+#             println("replay game clicked")
+#             filename = @js testingWindow replayGame()
+#             break
+#             #status = @js testingWindow resetStatus()
+#         end
+
+
+#     end
+
+#     if status == "exit"
+#       quit()
+#     end
+
+#     close(testingWindow)
+
+#     # END OF TESTING
+# end
+
+
+
+
+
+ARGS[1] = filename
 
 
 if status == "newGame"
         newGameWindow = Window()
-        
+
         sleep(3)
         load!(newGameWindow,"GUI/js/jquery-1.10.1.min.js")
         load!(newGameWindow,"GUI/js/json3.min.js")
         load!(newGameWindow,"GUI/js/generateBoard.js")
-        #load!(newGameWindow,"GUI/css/newGameWindow.css")
-        
+        load!(newGameWindow,"GUI/css/newGame.css")
+
         sleep(3)
-        
+        tools(newGameWindow)
         body!(newGameWindow, "
-            
-                <h1>Create New Game</h1>
-                
-                <div class='container'>
-                         <input type='button' onclick='remoteGame()' value='Remote'>
-                         <input type='button' onclick='localP()' value='Local(Player)'>
-                         <input type='button' onclick='localAI()' value='Local(AI)'>
-                         <input type='button' onclick='HostP()' value='Host(Player)'>
-                         <input type='button' onclick='HostAI()' value='Host(AI)'>
-                </div>
 
-                <div class='nameGame'>
-                  <label for='fileText'>File Name:</label>
-                  <input type='text' id='fileText' placeholder='Enter file name'/>
-                </div>
+    <h1>Create New Game</h1>
 
-                <div class='typeGame'>
-                    <label for='gameType'>Game Type:</label>
-                  <select class='selectbox' id='gameType'>
-                    <option>Mini</option>
-                    <option selected='selected'>Shogi</option>
-                    <option>Chu</option>
-                    <option>Tenjiku</option>
-                  </select>
-                </div>    
+    <div class='container'>
+        <h2>Select type of Game:</h2>
+<!--
+        <input type='button' onclick='remoteGameAI()' value='Remote(AI)'>
+        <input type='button' onclick='remoteGameP()' value='Remote(Player)'>
+        <input type='button' onclick='localP()' value='Local(Player)'>
+        <input type='button' onclick='localAI()' value='Local(AI)'>
+        <input type='button' onclick='HostP()' value='Host(Player)'>
+        <input type='button' onclick='HostAI()' value='Host(AI)'>
+-->
+        <input  type='radio' name='rb' id='rb1'  onclick='remoteGameAI()' />
+        <label class ='radLabel' for='rb1'>Remote(AI)</label>
+        <input  type='radio' name='rb' id='rb2' onclick='remoteGameP()' />
+        <label class ='radLabel' for='rb2'>Remote(Player)</label>
+        <input type='radio' name='rb' id='rb3' onclick='localP()' />
+        <label class ='radLabel' for='rb3'>Local(Player)</label>
+        <input type='radio' name='rb' id='rb4'  onclick='localAI()'/>
+        <label class ='radLabel' for='rb4'>Local(AI)</label>
+        <input  type='radio' name='rb' id='rb5' onclick='HostP()'/>
+        <label class ='radLabel' for='rb5'>Host(Player)</label>
+        <input  type='radio' name='rb' id='rb6' onclick='HostAI()'/>
+        <label class ='radLabel' for='rb6'>Host(AI)</label>
+    </div>
 
-                <div class='cheatGame'>
-                    <label for='cheatcheckbox'>Cheating:</label>
-                    <input type='checkbox' id='cheatcheckbox'>
-                </div>
-
-
-                <div class='timeLimGame'>
-                  <label for='timeLimit'>Time Limit:</label>
-                  <input type='number' min='0' id='timeLimit' placeholder='Optional'/>
-                </div>    
-
-                <div class='timeIncGame'>
-                  <label for='timeInc'>Time Increment:</label>
-                  <input type='number' min='0' id='timeInc' placeholder='Optional'/>
-                </div>    
-
-                <div class='difficultyGame'>
-                    <label for='gameType'>Game Difficulty:</label>
-                  <select class='selectbox' id='gameDifficulty'>
-                    <option selected='selected'>Normal</option>
-                    <option>Hard</option>
-                    <option>Suicidal</option>
-                    <option>Protracted death</option>
-                    <option>Random AI</option>
-                  </select>
-                </div>    
-
-                <div class='flipGame'>
-                    <label for='flipcheckbox'>Japanese roulette mode:</label>
-                    <input type='checkbox' id='flipcheckbox'>
-                </div>
-
-                <H1>STUFF FOR SERVER GO HERE</H1>
+<div class='choicesGame'>
+<!--
+    <div class='nameGame'>
+        <label for='fileText'>File Name:</label>
+        <input type='text' id='fileText' placeholder='Enter file name'>
+    </div>
+-->
 
 
-                <div class='container'>
-                  <input type='button' onclick='getValues()' value='Continue'>
-                </div>
-        
-        
+    <div id='inputholder'>
+        <div class='group'>
+         <input class='ripInput' type='text' id='fileText' placeholder='File Name'><span class='highlight'></span><span class='bar'></span>
+<!--        <label class='ripLabel'>File Name</label>-->
+       </div>
+    </div>
+
+
+
+
+
+<!--    SELECT  OPTIONS-->
+
+
+
+<div class='typeGame'>
+  <div class='sel sel--black-panther'>
+  <select name='select-profession' id='gameType'>
+    <option value='' >Type of Shogi</option>
+    <option value='Mini'>Mini</option>
+    <option value='Shogi'>Shogi</option>
+    <option value='Chu'>Chu</option>
+    <option value='Tenjiku'>Tenjiku</option>
+  </select>
+</div>
+</div>
+
+<div class='difficultyGame'>
+  <div class='sel sel--black-panther'>
+  <select name='select-profession' id='gameDifficulty'>
+    <option value='' disabled>Difficulty</option>
+    <option value='Normal'>Normal</option>
+    <option value='Hard'>Hard</option>
+    <option value='Suicidal'>Suicidal</option>
+    <option value='Protracted'>Protracted death</option>
+    <option value='Random AI'>Random AI</option>
+  </select>
+</div>
+    </div>
+
+
+<!--    CHECK BOXES -->
+
+    <div class='cheatGame'>
+        <input type='checkbox' name='cb' id='cheatcheckbox' />
+        <label class='ckLabel' for='cheatcheckbox'>Cheating</label>
+
+    </div>
+
+    <div class='flipGame'>
+        <input type='checkbox' name='cb' id='flipcheckbox' />
+        <label class='ckLabel' for='flipcheckbox'>Japanese roulette mode</label>
+    </div>
+    <div class='goFirst'>
+         <input type='checkbox' name='cb' id='goFirstcheckbox' />
+        <label class='ckLabel' for='goFirstcheckbox'>Go first</label>
+
+    </div>
+
+
+
+
+<!--TEXT INPUTS-->
+
+<!--
+    <div class='timeLimGame'>
+        <label for='timeLimit'>Time Limit:</label>
+        <input type='number' min='0' id='timeLimit' placeholder='Optional' value='0'>
+    </div>
+-->
+
+
+    <div id='inputholder'>
+        <div class='group'>
+         <input class='ripInput' type='number'  min='0' id='timeLimit' placeholder='Time Limit'><span class='highlight'></span><span class='bar'></span>
+<!--        <label class='ripLabel'>Time Limit</label>-->
+       </div>
+    </div>
+
+
+
+<!--
+    <div class='timeIncGame'>
+        <label for='timeInc'>Time Increment:</label>
+        <input type='number' min='0' id='timeInc' placeholder='Optional' value='0'>
+    </div>
+-->
+
+        <div id='inputholder'>
+        <div class='group'>
+         <input class='ripInput' type='number'  min='0' id='timeInc' placeholder='Time Increment'><span class='highlight'></span><span class='bar'></span>
+<!--        <label class='ripLabel'>Time Limit</label>-->
+       </div>
+    </div>
+
+
+
+<!--
+    <div class='ip_addr'>
+        <label for='fileText'>IP Address:</label>
+        <input type='text' id='ipText' placeholder='Enter IP Address'>
+    </div>
+
+-->
+
+    <div id='inputholder' class='ip_addr'>
+        <div class='group'>
+         <input class='ripInput' type='text' id='ipText' placeholder='Enter IP Address'><span class='highlight'></span><span class='bar'></span>
+<!--        <label class='ripLabel'>Time Limit</label>-->
+       </div>
+    </div>
+
+<!--
+    <div class='port_num'>
+        <label for='fileText'>Port Number:</label>
+        <input type='text' id='portText' placeholder='Enter Port Number'>
+    </div>
+-->
+
+       <div id='inputholder' class='port_num'>
+        <div class='group'>
+         <input class='ripInput' type='text' id='portText' placeholder='Enter Port Number'><span class='highlight'></span><span class='bar'></span>
+<!--        <label class='ripLabel'>Time Limit</label>-->
+       </div>
+    </div>
+
+
+
+<!--    CONTINUE BUTTON-->
+  <div class='button' onclick='getValues()'>
+    <p class='btnText'>create game</p>
+    <div class='btnTwo'>
+      <p class='btnText2'>GO!</p>
+    </div>
+ </div>
+
+  </div>
+<!--    STUFF FROM NEW WINDOW-->
+
+
+
+
+
+
+
+
+<script>
+
+    /* ===== Logic for creating fake Select Boxes ===== */
+\$('.sel').each(function() {
+  \$(this).children('select').css('display', 'none');
+
+  var \$current = \$(this);
+
+  \$(this).find('option').each(function(i) {
+    if (i == 0) {
+      \$current.prepend(\$('<div>', {
+        class: \$current.attr('class').replace(/sel/g, 'sel__box')
+      }));
+
+      var placeholder = \$(this).text();
+      \$current.prepend(\$('<span>', {
+        class: \$current.attr('class').replace(/sel/g, 'sel__placeholder'),
+        text: placeholder,
+        'data-placeholder': placeholder
+      }));
+
+      return;
+    }
+
+    \$current.children('div').append(\$('<span>', {
+      class: \$current.attr('class').replace(/sel/g, 'sel__box__options'),
+      text: \$(this).text()
+    }));
+  });
+});
+
+// Toggling the `.active` state on the `.sel`.
+\$('.sel').click(function() {
+  \$(this).toggleClass('active');
+});
+
+// Toggling the `.selected` state on the options.
+\$('.sel__box__options').click(function() {
+  var txt = \$(this).text();
+  var index = \$(this).index();
+
+  \$(this).siblings('.sel__box__options').removeClass('selected');
+  \$(this).addClass('selected');
+
+  var \$currentSel = \$(this).closest('.sel');
+  \$currentSel.children('.sel__placeholder').text(txt);
+  \$currentSel.children('select').prop('selectedIndex', index + 1);
+});
+
+
+</script>
+
+
+
+
+
         ")
-        
+
+
+
+#What is being selected : Host, Remote, no connection
         status =""
         while status != "exit"
             sleep(0.01)
             status = @js newGameWindow statusJS
-        
+
             if status == "continue"
                 println("continue game clicked")
                 @js newGameWindow getValues()
@@ -166,16 +692,17 @@ if status == "newGame"
                 limitadd=@js newGameWindow limitaddJS
                 gameDifficulty = @js newGameWindow difficultyJS
                 flip = @js newGameWindow flipJS
+                goFirst = @js newGameWindow goFirstJS
+                gameChosen = @js newGameWindow gameChosenJS
+                ip = @js newGameWindow ipJS
+                port = @js newGameWindow portJS
 
+                #initialization(ip, port, cheating, timelimit, limitadd, game)
                 break
-                #status = @js newGameWindow resetStatus()
             end
-            
-        
         end
-        
-        
-        close(newGameWindow)
+
+
         @printf("Filename: %s\nType: %s\nCheating: %s\nTimelimit: %s\nLimitadd: %s\n",filename,game,cheating=="T"?"on":"off", timelimit, limitadd)
 
   ARGS[1] = filename
@@ -188,20 +715,177 @@ if status == "newGame"
 
 
 
+
+
+#What kind of game chosen by user and initializingGame
+if gameChosen == "localP"
+  println("localP")
+elseif gameChosen == "localAI"
+  println("localAI")
+elseif gameChosen == "HostP"
+  ARGS[1]=port
+  @async include("server.jl")
+  ip = "127.0.0.1"
+  reply=initialization(ip, port, cheating, timelimit, limitadd, game)
+  println("HostP")
+elseif gameChosen == "HostAI"
+  ARGS[1]=port
+  @async include("server.jl")
+  ip = "127.0.0.1"
+  reply=initialization(ip, port, cheating, timelimit, limitadd, game)
+  println("HostAI")
+elseif gameChosen == "remoteGameAI"
+  reply=initialization(ip, port, cheating, timelimit, limitadd, game)
+  println("remoteGameAI")
+elseif gameChosen == "remoteGameP"
+  # @js newGameWindow alert("REMOTE P")
+  reply=initialization(ip, port, cheating, timelimit, limitadd, game)
+  println("remoteGameP")
 end
 
-ARGS[1] = filename
+#Send each move to other player -- loop until resign
+
+  close(newGameWindow)
+elseif status == "replayGame"
+  sleep(3)
+  replayWindow=Window()
+  include("dependencies.jl") #asafasdfasdfasd
+  load!(replayWindow,"GUI/js/json3.min.js")
+  load!(replayWindow,"GUI/js/jquery-1.10.1.min.js")
+  load!(replayWindow,"GUI/js/generateBoard.js")
+  load!(replayWindow,"GUI/css/board.css")
+  sleep(3)
+
+  body!(replayWindow, "
+  <input type='button' value='Generate current board' onclick='generateTable()' />
+  <input type='button' value='Next Move' onclick='nextMove()' />
+  <input type='button' value='Previous Move' onclick='prevMove()' />
+  <div id='currentPlayer'></div>
+  <div id='dvBHand'> </div>
+  <div id='dvTable'> </div>
+  <div id='dvWHand'> </div>
+  <input type='button' value='exit' onclick='exit()' />
+  ")
+
+  board_step=initBoard()
+  moveNum_step=0
+
+  db = SQLite.DB(ARGS[1])
+  res = SQLite.query(db, "SELECT COUNT(*) FROM moves;")
+  i = get(res[1][1])
+
+  function fillJSBoard_replay(board::Board)
+  boardArray = board.boardArray
+   # println("current player", getCurrentPlayer(board))
+   # printHand(board, BLACK)
+   @js replayWindow getPlayer($(getCurrentPlayer(board)))
+    for j = BOARD_DIMENSIONS:-1:1
+        for i= 1:BOARD_DIMENSIONS
+        # add piece to item array in js
+        @js replayWindow item.push($(boardArray[i,j]))
+        end
+        # add row to boardJS
+        @js replayWindow boardJS.push(item.slice())
+        @js replayWindow item.splice(0)
+       # @printf("\n")
+    end
+  #  printHand(board, WHITE)
+end
+
+function fillJSPlayerHand_replay(board::Board, player::AbstractString)
+  handB = board.blackHand
+  handW = board.whiteHand
+  if player =="Black"
+  for i= 1:length(handB)
+    @js replayWindow blackHandJS.push($(handB[i]))
+  end
+elseif player == "White"
+    for i= 1:length(handW)
+     @js replayWindow whiteHandJS.push($(handW[i]))
+  end
+end
+end
+
+fillJSBoard_replay(board_step)
+fillJSPlayerHand_replay(board_step,"Black")
+fillJSPlayerHand_replay(board_step,"White")
+@js replayWindow generateTable()
 
 
+  status =""
+  while status != "exit"
+      sleep(0.01)
+      status = @js replayWindow statusJS
+
+      if status == "nextMove"
+        println("next move clicked")
+        if moveNum_step + 1 <=i && moveNum_step + 1 >=1
+        moveNum_step = moveNum_step + 1
+        else
+        @js replayWindow alert("No board to display")
+        status = @js replayWindow resetStatus()
+        continue
+        end
+        board_step = generateNextBoard(board_step, db, moveNum_step)
+        @js replayWindow deleteTables()
+        fillJSBoard_replay(board_step)
+        fillJSPlayerHand_replay(board_step,"White")
+        fillJSPlayerHand_replay(board_step,"Black")
+        status = @js replayWindow resetStatus()
+        @js replayWindow generateTable()
+      end
+      if status == "prevMove"
+        println("previous move clicked")
+        if moveNum_step - 1 <=i && moveNum_step - 1 >=0
+        moveNum_step = moveNum_step - 1
+        else
+        @js replayWindow alert("No board to display")
+        status = @js replayWindow resetStatus()
+        continue
+        end
+        println(moveNum_step)
+        if moveNum_step != 0
+        board_step = generateNextBoard(board_step, db, moveNum_step)
+        else
+        board_step = initBoard()
+        end
+
+        @js replayWindow deleteTables()
+        fillJSBoard_replay(board_step)
+        fillJSPlayerHand_replay(board_step,"White")
+        fillJSPlayerHand_replay(board_step,"Black")
+
+        status = @js replayWindow resetStatus()
+        @js replayWindow generateTable()
+
+      end
+
+        # println(moveNum_step)
 
 
+        #         board_step = generateNextBoard(board_step, db, moveNum_step)
+        # @js replayWindow deleteTables()
+        # fillJSBoard_replay(board_step)
+        # fillJSPlayerHand_replay(board_step,"White")
+        # fillJSPlayerHand_replay(board_step,"Black")
+        # status = @js replayWindow resetStatus()
+        # @js replayWindow generateTable()
+
+  end
+  close(replayWindow)
+  quit()
+
+end
+
+
+ difficulty = gameDifficulty
+ ARGS[1] = filename
 
 
 #DISPLAYING BOARD
 w = Window()
 sleep(3)
 include("dependencies.jl")
-
 load!(w,"GUI/js/jquery-1.10.1.min.js")
 load!(w,"GUI/js/json3.min.js")
 load!(w,"GUI/js/generateBoard.js")
@@ -211,18 +895,121 @@ load!(w,"GUI/css/board.css")
 sleep(3)
 
 body!(w, "
-<input type='button' value='Generate current board' onclick='generateTable()' />
-<input type='button' value='Make move' onclick='makeMove()' />
-<input type='button' value='run move.jl' onclick='movejl()' />
-<div id='currentPlayer'></div>
-<div id='dvBHand'> </div>
-<div id='dvTable'> </div>
-<div id='dvWHand'> </div>
-<input type='button' value='exit' onclick='exit()' />
+
+
+
+
+ <div class='moveItems'>
+   <div class='paper'id='btnRefresh' onclick='generateTable()'>
+      <p id='num'>Refresh</p>
+      <div class='ripple'></div>
+   </div>
+
+   <div class='paper' id='btnMove' onclick='makeMove()'>
+      <p id='num'>Make Move</p>
+      <div class='ripple'></div>
+   </div>
+
+      <div class='promotePiece'>
+        <input type='checkbox' name='cb' id='promoteCheckBox' />
+        <label class='ckLabel' for='promoteCheckBox'>Promote</label>
+    </div>
+    </div>
+
+    <div class='optItems'>
+   <div class='paper' onclick='resign()'>
+      <p id='num'>Resign</p>
+      <div class='ripple'></div>
+   </div>
+
+   <div class='paper' onclick='winCheck()'>
+      <p id='num'>Check Win</p>
+      <div class='ripple'></div>
+   </div>
+
+   <div class='paper'  onclick='email()'>
+      <p id='num'>Send Game by Email</p>
+      <div class='ripple'></div>
+   </div>
+
+    </div>
+
+
+
+
+
+<!--    SCRIPT FOR BUTTONS -->
+    <script>
+
+    \$(document).ready(function() {
+   \$('.paper').mousedown(function(e) {
+      var ripple = \$(this).find('.ripple');
+      ripple.removeClass('animate');
+      var x = parseInt(e.pageX - \$(this).offset().left) - (ripple.width() / 2);
+      var y = parseInt(e.pageY - \$(this).offset().top) - (ripple.height() / 2);
+      ripple.css({
+         top: y,
+         left: x
+      }).addClass('animate');
+   });
+});
+
+</script>
+
+
+
+<div class='mainGame'>
+  <div id='currentPlayer'></div>
+  <div id='dvBHand'> </div>
+  <div id='dvTable'> </div>
+  <div id='dvWHand'> </div>
+</div>
+
+
+  <div class='button' onclick='exit()'>
+    <p class='btnText'>EXIT</p>
+    <div class='btnTwo'>
+      <p class='btnText2'>X</p>
+    </div>
+ </div>
+
+
 ")
 
 #☖☗
 board = generateCurrentBoard()
+
+###################################################################################
+########DIOGO'S FUNCTION FOR FINDING LEGAL MOVE SQUARES############
+#=It returns an array of tuples, containing the coordinates=#
+function findLegalTarget(board::Board, x::Int, y::Int)
+  legal = legalMovesForSpace(board, x, y)
+  locations = Array{Any}(0)
+  for move in legal
+    if move.targetx3 != nothing
+      push!(locations, [(move.targetx, move.targety), (move.targetx2, move.targety2), (move.targetx3, move.targety3)] )
+    elseif move.targetx2 != nothing
+      push!(locations, [(move.targetx, move.targety), (move.targetx2, move.targety2), (nothing, nothing)] )
+    else
+      push!(locations, [(move.targetx, move.targety), (nothing, nothing), (nothing, nothing)] )
+    end
+  end
+  return locations
+end
+
+# legalTargets = findLegalTarget(board, 7, 10)
+# println(legalTargets)
+# #=legalTargets[1] = ((targetx, targety),(targetx2, targety2), (targetx3, targety3))
+#   legalTargets[1][1] = (targetx, targety)
+#   legalTargets[1][1][1] = targetx
+# =#
+# println(legalTargets[1][1])
+# println(legalTargets[1][2])
+# println(legalTargets[1][3])
+# println(legalTargets[1][1][1])
+# println(legalTargets[1][1][2])
+##################################################################################
+##################################################################################
 
 function fillJSBoard(board::Board)
   boardArray = board.boardArray
@@ -262,78 +1049,262 @@ fillJSPlayerHand(board,"White")
 fillJSPlayerHand(board,"Black")
 fillJSBoard(board)
 #opentools(w)
-
+title(w,ARGS[1])
 tools(w)
 
 @js w generateTable();
 
-
-#LOOP TO COMMUNICATE WITH WINDOW
-
-status =""
-while status != "exit"
-sleep(0.01)
-status = @js w statusJS
-if status == "generateTable"
-  println("Generate Table clicked")
-  status = @js w resetStatus()
-end
-if status == "movejl"
-  println("movejl clicked")
-  include("move.jl")
-  status = @js w resetStatus()
-end
-if status == "makeMove"
-  println("make move clicked")
-  arr = @js w movesArrayJS
-  
-  println(arr)
-  if length(arr) == 2
-  ARGS[2] = split(arr[1],",")[1]
-  ARGS[3] = split(arr[1],",")[2]
-  ARGS[4] = split(arr[2],",")[1]
-  ARGS[5] = split(arr[2],",")[2]
-  ARGS[6] = "F" #CHANGE THIS!!!!!!!!!!!!!!!!
-  elseif length(arr) == 3
-  ARGS[2] = split(arr[1],",")[1]
-  ARGS[3] = split(arr[1],",")[2]
-  ARGS[4] = split(arr[2],",")[1]
-  ARGS[5] = split(arr[2],",")[2]
-  ARGS[6] = "F" #CHANGE THIS!!!!!!!!!!!!!!!!
-  ARGS[7] = split(arr[3],",")[1]
-  ARGS[8] = split(arr[3],",")[2]
-  elseif length(arr) == 4
-  ARGS[2] = split(arr[1],",")[1]
-  ARGS[3] = split(arr[1],",")[2]
-  ARGS[4] = split(arr[2],",")[1]
-  ARGS[5] = split(arr[2],",")[2]
-  ARGS[6] = "F" #CHANGE THIS!!!!!!!!!!!!!!!!
-  ARGS[7] = split(arr[3],",")[1]
-  ARGS[8] = split(arr[3],",")[2]
-  ARGS[9] = split(arr[4],",")[1]
-  ARGS[10]= split(arr[4],",")[2]
-  else
-      @js w alert("INVALID MOVE. REJECTED!")
-      status = @js w resetStatus()
-      continue
+#keep filename
+function resetArgs()
+  for i in 2:length(ARGS)
+       pop!(ARGS)
   end
-  println(ARGS)
-  include("move_user_move.jl")
+end
 
+@js w setCheating($(getCheating(ARGS[1])))  # legal or cheating
+
+moveType = 1  #mov 1   drpo 2 resig 3
+moveNum  = board.turnNumber
+cheating =  0 #0 not cheating 1 not cheating
+currPlayer = getCurrentPlayer(board)
+function updateTable()
   board = generateCurrentBoard()
-
   @js w deleteTables()
   fillJSBoard(board)
   fillJSPlayerHand(board,"White")
   fillJSPlayerHand(board,"Black")
-
-
   @js w movesArrayJS.splice(0)
   status = @js w resetStatus()
   @js w generateTable()
+end
+
+as = reply
+
+if goFirst == "White"
+  if gameChosen == "localAI" || gameChosen == "HostAI" || gameChosen=="remoteGameAI"
+  #AI MAKES MOVE
+  include("move.jl")
+  #GET THE MOVE THAT THE AI MADE(FROM THE DATABASE) AND SEND THE PACKET IF ITS A NETWORKING GAME
+  filename=ARGS[1]
+  if gameChosen == "HostAI" || gameChosen == "remoteGameAI"
+    setNetPacketDB(ip, port, moveNum, as, filname)
+  #test = getMove()
+  # @js w alert(test)
+  end
+  updateTable()
+  end
 
 end
 
+#LOOP TO COMMUNICATE WITH WINDOW
+
+status =""
+
+
+while status != "exit"
+sleep(0.01)
+status = @js w statusJS
+
+currPlayer = @js w currentPlayer
+
+#println(moveNum)
+  if status == "generateTable"
+    println("Generate Table clicked")
+    status = @js w resetStatus()
+  end
+  if status == "resign"
+    println("Resign made")
+    status = @js w resetStatus()
+    include("move_user_resign.jl")
+    @js w alert("You Resigned")
+    if gameChosen == "HostP" || gameChosen=="HostAI"
+      #disconnect
+      close(clientside)
+      #send resign packet
+      setNetPacketResign(ip, port, moveNum, as, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0)
+    end
+    if gameChosen == "remoteGameAI" || gameChosen== "remoteGameP"
+      #send resign packet
+      setNetPacketResign(ip, port, moveNum, as, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0)
+    end
+    break
+  end
+
+  if status == "movejl"
+    println("movejl clicked")
+    include("move.jl")
+    updateTable()
+    status = @js w resetStatus()
+  end
+
+if status == "movejl"
+  println("movejl clicked")
+  include("move.jl")
+  updateTable()
+  status = @js w resetStatus()
 end
+
+if status == "email"
+  println("Email clicked")
+  msg= string(pwd())
+  message=("This is the path to the gamefile: $msg")
+  @js w alert($message)
+  status = @js w resetStatus()
+end
+
+if currPlayer != goFirst && (gameChosen == "localAI" || gameChosen == "HostAI" || gameChosen=="remoteGameAI")
+  #AI MAKES MOVE
+  include("move.jl")
+  #GET THE MOVE THAT THE AI MADE(FROM THE DATABASE) AND SEND THE PACKET IF ITS A NETWORKING GAME
+  filename=ARGS[1]
+  if gameChosen == "HostAI" || gameChosen == "remoteGameAI"
+    setNetPacketDB(ip, port, moveNum, as, filname)
+  end
+  updateTable()
+  status = @js w resetStatus()
+
+  elseif status == "makeMove"
+    #USER MAKING MOVE
+    resetArgs()
+    println("make move clicked")
+    arr = @js w movesArrayJS #array with moves user wants to do.
+    promotion = @js w promotePieceJS #either T or F
+    board = generateCurrentBoard()
+    moveNum = board.turnNumber
+
+    println(arr)
+
+    if length(arr) == 2
+      push!(ARGS,split(arr[1],",")[1])
+      push!(ARGS,split(arr[1],",")[2])
+      push!(ARGS,split(arr[2],",")[1])
+      push!(ARGS,split(arr[2],",")[2])
+      push!(ARGS,promotion)
+
+
+
+      if gameChosen == "HostP" || gameChosen == "remoteGameP"
+
+  #        reply = setNetPacket(ip, port, moveNum, as, ARGS[2], ARGS[3], 2, ARGS[4], ARGS[5], ARGS[6], cheating, 0, 0, 0, 0)
+  #        parserOfMessage(reply) # TODO - Stacey, remove this????????????????????????????????
+          println("sending the next move")
+          #"<wincode>:<authString>:<movenum>:<movetype>:<sourcex>:<sourcey>:<targetx>:<targety>:<option>:<cheating>:<
+          #targetx2>:<targety2>"
+          message = setNetPacket(ip, port, moveNum, authString, ARGS[2], ARGS[3], 2, ARGS[4], ARGS[5], ARGS[6], cheating, 0, 0, 0, 0)
+  #        moveNumber = moveNumber + 1
+          println(message)
+          println("--------------------------------------------------------------FIVE")
+          println(clientside, message)
+
+          println("Waiting for move")
+          reply = readline(clientside)
+          println("Move received")
+          println("Server message: $reply")
+          parserOfMessage(reply) # TODO - Stacey, remove this????????????????????????
+          @js w alert("after setNetPacket")
+      end
+
+    elseif length(arr) == 3
+      push!(ARGS,split(arr[1],",")[1])
+      push!(ARGS,split(arr[1],",")[2])
+      push!(ARGS,split(arr[2],",")[1])
+      push!(ARGS,split(arr[2],",")[2])
+      push!(ARGS,promotion)
+      push!(ARGS,split(arr[3],",")[1])
+      push!(ARGS,split(arr[3],",")[2])
+
+    if gameChosen == "HostP" || gameChosen == "remoteGameP"
+      setNetPacket(ip, port, moveNum, as, ARGS[2], ARGS[3], 1, ARGS[4], ARGS[5], ARGS[6], cheating, ARGS[7], ARGS[8], 0, 0)
+    end
+
+  elseif length(arr) == 4
+    push!(ARGS,split(arr[1],",")[1])
+    push!(ARGS,split(arr[1],",")[2])
+    push!(ARGS,split(arr[2],",")[1])
+    push!(ARGS,split(arr[2],",")[2])
+    push!(ARGS,promotion)
+    push!(ARGS,split(arr[3],",")[1])
+    push!(ARGS,split(arr[3],",")[2])
+    push!(ARGS,split(arr[4],",")[1])
+    push!(ARGS,split(arr[4],",")[2])
+
+    if gameChosen == "HostP" || gameChosen == "remoteGameP"
+      setNetPacket(ip, port, moveNum, as, ARGS[2], ARGS[3], 1, ARGS[4], ARGS[5], ARGS[6], cheating, ARGS[7], ARGS[8], ARGS[9], ARGS[10])
+    end
+
+    else
+      @js w alert("INVALID MOVE. REJECTED!")
+      @js w movesArrayJS.splice(0)
+      status = @js w resetStatus()
+      continue
+    end
+
+    println(ARGS)
+    include("move_user_move.jl")
+    # include("validate.jl")
+    # @js w alert("Valid result: " + $resultValidate)
+    updateTable()
+    status = @js w resetStatus()
+  end
+
+  if status == "makeDrop"
+    #where drops are made
+    resetArgs()
+    arr = @js w movesArrayJS #Color:piece:hand , x1,y1
+    # @js w alert($arr)
+
+    board = generateCurrentBoard()
+    moveNum = board.turnNumber
+
+    if length(arr) == 2
+      push!(ARGS,getDatabaseName(split(arr[1],":")[2]))
+      push!(ARGS,split(arr[2],",")[1])
+      push!(ARGS,split(arr[2],",")[2])
+    else
+      @js w alert("INVALID DROP. REJECTED!")
+      @js w movesArrayJS.splice(0)
+      status = @js w resetStatus()
+      continue
+    end
+
+#################################################################################################UPDATE THIS##########################################################################
+    if gameChosen == "HostP" || gameChosen == "remoteGameP"
+      setNetPacket(ip, port, moveNum, as, ARGS[2], ARGS[3], 2, ARGS[4], ARGS[5], ARGS[6], cheating, 0, 0, 0, 0)
+    end
+
+    println(ARGS)
+    include("move_user_drop.jl")
+    # include("validate.jl")
+    # @js w alert("Valid result: " + $resultValidate)
+    updateTable()
+
+     status = @js w resetStatus()
+  end
+
+  if status == "getvalidJS"
+    arr = @js w movesArrayJS
+    board = generateCurrentBoard();
+    legalArr = findLegalTarget(board,parse(Int,split(arr[1],",")[1]),parse(Int,split(arr[1],",")[2]))
+    @js w getValidArr($legalArr,1)
+
+    status = @js w resetStatus()
+  end
+
+
+
+  if status == "checkWin"
+    include("win.jl")
+    @js w alert("Win result: " + $resultWin)
+    status = @js w resetStatus()
+  end
+
+  # getServerPacket(ip, port)
+  #=
+  if gameChosen == "HostP" || gameChosen == "remoteGameP" || gameChosen == "remoteGameAI" || gameChosen == "HostAI"
+    parserOfMessage(ip, port)
+  end
+  =#
+
+end #end  loop
+
 println("Exit clicked")
-

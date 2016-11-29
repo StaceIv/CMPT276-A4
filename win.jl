@@ -35,6 +35,13 @@ function runWinJl()
   push!(allBoardStates, newBoard.boardArray) #add starting boardstate to allBoardstates
   moveNum = 1
 
+  if hasTimeLimit == "yes"
+    result = checkTimeOut(blackTime, whiteTime)
+    if result != "?"
+      return result
+    end
+  end
+
   while moveNum <= totalMoves
     newBoard = deepcopy(generateNextBoard(board, db, moveNum))
     push!(allBoardStates, newBoard.boardArray) #starting boardstate is index i, current boardstate is index moveNum+1
@@ -58,18 +65,6 @@ function runWinJl()
       end
     end
 
-    if hasTimeLimit == "yes"
-      if blackTime <= 0 && whiteTime > 0
-        println("Black player timeout")
-        return "W"
-      elseif blackTime > 0 && whiteTime <= 0
-        println("White player timeout")
-        return "B"
-      else
-        println("Both players timeout")
-        return "D"
-      end
-    end
 
     if drawFlag >= 3
       return "D"
@@ -81,5 +76,5 @@ end
 
 
 
-result = runWinJl()
-println(result)
+global resultWin = runWinJl()
+println(resultWin)

@@ -14,11 +14,24 @@ const MAX_TREE_DEPTH = 100  #helps stop the tree from crashing from memory use, 
 function getMove(board::Board)
   # moveTree = initMonteCarloRoot(board)
   # return moveTree.children[moveTree.bestChildIndex].move
-  return initMonteCarloRoot(board) #Returns the best move and the time taken
+  timeLeft = 0
+  db=SQLite.DB(ARGS[1])
+  if getCurrentPlayer(currentBoard) == BLACK
+    res = SQLite.query(db, "SELECT value FROM meta WHERE key ='sente_time';")
+    timeLeft = parse(Int, get(res[1][1]))
+
+  elseif getCurrentPlayer(currentBoard) == WHITE
+    res = SQLite.query(db, "SELECT value FROM meta WHERE key ='gote_time';")
+    timeLeft = parse(Int, get(res[1][1]))
+  else
+    assert(false)
+  end
+
+  return initMonteCarloRoot(board, timeLeft) #Returns the best move and the time taken
 end
 
 function justResign()
-  return "Resign"
+  return "Resign", 0
 end
 
 # #CHILD
@@ -49,10 +62,9 @@ type MonteCarloRoot
 end
 
 
-function initMonteCarloRoot(board::Board)
+function initMonteCarloRoot(board::Board, timeLeft::Int)
   startTime = Int(now())
 
-	#tracePrint("initializing root")
   self = MonteCarloRoot(
     deepcopy(board),            #board
     0,                          #depth
@@ -64,41 +76,47 @@ function initMonteCarloRoot(board::Board)
 		0											   		#score
   )
 
-	#Populate with all depth 1 children
-	for i in 1:length(self.allMoves)
-		createChild( self, self.allMoves[i] )
-	end
-
-
-  timeLeft::Int = 0
   db=SQLite.DB(ARGS[1])
-  if getCurrentPlayer(currentBoard) == BLACK
-    res = SQLite.query(db, "SELECT value FROM meta WHERE key ='sente_time';")
-    timeLeft = parse(Int, get(res[1][1]))
 
-  elseif getCurrentPlayer(currentBoard) == WHITE
-    res = SQLite.query(db, "SELECT value FROM meta WHERE key ='gote_time';")
-    timeLeft = parse(Int, get(res[1][1]))
-  end
-
+  tracePrint(difficulty)
 
   if timeLeft == 0 #INFINITE TIME
     timeToTake = TIME_LIMIT
 
   else  #FINITE TIME
     if gameType == GAMETYPE_MINI
-      const AVERAGE_GAME_LENGTH = 80
+      AVERAGE_GAME_LENGTH = 80
     else
-      const AVERAGE_GAME_LENGTH = 125
+      AVERAGE_GAME_LENGTH = 125
     end
+
+
+    if difficulty == DIFFICULTY_NORMAL
+      AVERAGE_GAME_LENGTH = AVERAGE_GAME_LENGTH * 3
+    end
+
     currentTurn = Int(floor(self.board.turnNumber/2)) #number of moves you've taken before
     expectedTurnsRemaining = max(AVERAGE_GAME_LENGTH - currentTurn, 10)
     timeToTake = timeLeft / expectedTurnsRemaining
 
     if timeToTake < 1.5
-      return self.children[1].move, Int(now()) - startTime #return best child and used time
+      return self.allMoves[1], Int(now()) - startTime #return best child and used time
     end
   end
+
+
+  #Resigning is always the best way to minimize score assuming its tested against other suicide ai
+  if difficulty == DIFFICULTY_SUICIDE
+    return self.allMoves[end], Int(now()) - startTime
+  elseif difficulty == DIFFICULTY_RANDOM
+    randIndex::Int = rand(ourRand, 1:length(self.allMoves) )
+    return self.allMoves[randIndex], Int(now()) - startTime
+  end
+
+	#Populate with all depth 1 children
+	for i in 1:length(self.allMoves) -1 #Skip resign for now
+		createChild( self, self.allMoves[i] )
+	end
 
 
 	iterations = 0
@@ -111,11 +129,16 @@ function initMonteCarloRoot(board::Board)
 	tracePrint( "Grow finished" )
 
 
+  createChild( self, self.allMoves[end] ) #Create resign, finally
   self.bestChildIndex = length(self.children)
 
   #Make resigning suck, so it only does it if there is no other option. Note that losing should not be an option in the below code.
-  self.children[end].plays = -Inf
+  self.children[end].plays = 1
   self.children[end].score = -Inf
+
+
+  #recursivePrintNode(self)
+
 
 	for i in length(self.children):-1:1 #starts at resign, moves back
     tracePrint( ("child", i, self.children[i].move, self.children[i].score/self.children[i].plays, self.children[i].score, self.children[i].plays) )
@@ -126,13 +149,9 @@ function initMonteCarloRoot(board::Board)
 	  end
 	end #End forloop, bestChildIndex is now equal to the highest scoring move which does not enter check.
 
-	tracePrint( ("Best child index", self.bestChildIndex))
+  tracePrint( ("Best child index", self.bestChildIndex))
 
-  #TRACE
-  #recursivePrintNode(self)
-
-
-  return self.children[self.bestChildIndex].move, Int(now()) - startTime #return best child and used time
+  return self.children[self.bestChildIndex].move, Int(now()) - startTime, self #return best child and used time
 end
 
 
@@ -203,27 +222,16 @@ function selectNode(node, depth::Int)
   score::Float64
 	lastI::Int = 0
 	result = node
-  if depth%2 == 0 #Original player's turn POSSIBLE FIXME
-    score = selectionEval(node.children[1])
-    for i in 2:length(node.children)
-      newScore::Float64 = selectionEval(node.children[i])
-        if (newScore > score)
-	        score = newScore
-	        result = node.children[i] #There is a better looking kid to try
-			    lastI = i
-        end
-    end
-	else #Opponent's turn, look for the worst child
-    score = selectionEval(node.children[1])
-    for i in 2:length(node.children)
-      newScore::Float64 = selectionEval(node.children[i])
-    	if (newScore < score)
+  #if depth%2 == 0 #Original player's turn POSSIBLE FIXME
+  score = selectionEval(node.children[1])
+  for i in 2:length(node.children)
+    newScore::Float64 = selectionEval(node.children[i])
+      if (newScore > score)
         score = newScore
-  			result = node.children[i] #There is a better looking kid to try
-  			lastI = i
+        result = node.children[i] #There is a better looking kid to try
+		    lastI = i
       end
-    end
-	end
+  end
 
 
 	if (result == node)
@@ -243,14 +251,17 @@ function selectionEval(node)
 	#Upper confidence bound on given node
 	nodeWorth::Float64 = Float64(node.score) / node.plays
 	random::Float64 = 0.01 * rand(ourRand)
-	return nodeWorth + random + EXPLORATION_RATE*sqrt(log(Float64(node.plays)) / node.parent.plays)
+
+  value = nodeWorth + random + EXPLORATION_RATE*sqrt(log(Float64(node.parent.plays)) / node.plays)
+
+ return value
 end
 
 
 function myExpand(node)
 	if length(node.remainingMoves) > 0
     randIndex::Int = rand(ourRand, 1:length(node.remainingMoves))
-    createChild( node, node.allMoves[randIndex] )
+    createChild( node, node.remainingMoves[randIndex] )
     deleteat!(node.remainingMoves, randIndex)
     return true
   end
@@ -277,19 +288,39 @@ function simulate(node)
 	theWinState = winState(node.board)
 
 	if (theWinState == "B" && getCurrentPlayer(node.board) == BLACK) || (theWinState == "W" && getCurrentPlayer(node.board) == WHITE)
-		#backPropogateLoss(node)
-    backPropogateWin(node.parent)
+    if difficulty == DIFFICULTY_PROTRACTED
+      backPropogateWin(node)
+    else
+      backPropogateLoss(node)
+    end
+    #backPropogateLoss(node)
+    #backPropogateWin(node)
 	elseif (theWinState == "B" && getCurrentPlayer(node.board) == WHITE) || (theWinState == "W" && getCurrentPlayer(node.board) == BLACK)
-		#backPropogateWin(node)
-    backPropogateLoss(node.parent)
+    if difficulty == DIFFICULTY_PROTRACTED
+      backPropogateLoss(node)
+    else
+      backPropogateWin(node)
+    end
+    #backPropogateWin(node)
+    #backPropogateLoss(node)
 	elseif  (theWinState == "R" && getCurrentPlayer(node.board) == BLACK) || (theWinState == "r" && getCurrentPlayer(node.board) == WHITE)
+    if difficulty == DIFFICULTY_PROTRACTED
+      backPropogateResignLoss(node)
+    else
+      backPropogateResignWin(node)
+    end
 		#backPropogateResignWin(node)
-    backPropogateResignLoss(node.parent)
+    #backPropogateResignLoss(node)
 	elseif (theWinState == "R" && getCurrentPlayer(node.board) == WHITE) || (theWinState == "r" && getCurrentPlayer(node.board) == BLACK)
-		#backPropogateResignLoss(node)
-    backPropogateResignWin(node.parent)
+    if difficulty == DIFFICULTY_PROTRACTED
+      backPropogateResignWin(node)
+    else
+      backPropogateResignLoss(node)
+    end
+    #backPropogateResignLoss(node)
+    #backPropogateResignWin(node)
 	elseif theWinState == "D"
-		#backPropogateDraw(node.parent)
+    backPropogateDraw(node.parent)
 	else
 		tracePrint(theWinState)
 		assert(false)
@@ -364,13 +395,69 @@ end
 
 function recursivePrintNode(node)
   if isa(node, MonteCarloNode)
-    println( repeat("   ", node.depth), node.move, "  ",node.plays, "  ", length(node.remainingMoves) )
+    println( repeat("   ", node.depth), node.move,"  ", node.score/node.plays, "  ", node.plays, "     sel-> ", selectionEval(node) )
   else
     println( repeat("   ", node.depth), "  ", node.plays, "  ", length(node.remainingMoves) )
   end
 
   for i in 1:length(node.children)
     recursivePrintNode(node.children[i])
+  end
+end
+
+function getNodeAverageScore(node)
+  return node.score/node.plays
+end
+
+function getMoveScore(board::Board, move::Move)
+  trash, garb, node = initMonteCarloRoot(board, 500)
+
+  highest = getNodeAverageScore(node.children[1])
+  lowest = getNodeAverageScore(node.children[1])
+  sum = 0
+
+  score = -9999999
+  for i in 1:length(node.children)-1 #skip resign, the last index
+    currScore = getNodeAverageScore(node.children[i])
+    if move == node.children[i].move
+      score = currScore
+    end
+    if currScore > highest
+      highest = currScore
+    end
+    if currScore < lowest
+      lowest = currScore
+    end
+    sum = sum + currScore
+  end
+  average = sum / length(node.children)-1
+  return score, lowest, highest, average
+end
+
+function getMoveWorth(board::Board, move::Move)
+  score = getMoveScore(board, move)
+  deviation = (highest-lowest)/6
+  descriptor = ""
+  if score <= -9999999
+    descriptor = "Game Losing!"
+  elseif score <= lowest
+    descriptor = "You have dishonored your family."
+  elseif score <= lowest+deviation*1
+    descriptor = "So bad! Terrible!"
+  elseif score <= lowest+deviation*2
+    descriptor = "You goofed."
+  elseif score <= lowest+deviation*3
+    descriptor = "Not what I would have done."
+  elseif score <= lowest+deviation*4
+    descriptor = "Adequate."
+  elseif score <= lowest+deviation*5
+    descriptor = "You done did good, kid."
+  elseif score < lowest+deviation*6
+    descriptor = "Epic stuntz, way to shogi."
+  elseif score == highest
+    descriptor = "Best move! You are my god!"
+  else
+    descriptor = "Adequate."
   end
 end
 
@@ -396,34 +483,51 @@ numberOfMoves = get(res[1][1])
 res = SQLite.query(db, "SELECT value FROM meta WHERE key ='time_add';")
 timeAdd = parse(Int, getSQLValue(res))
 
+res = SQLite.query(db, "SELECT value FROM meta WHERE key ='gote_time';")
+goteTime = parse(Int, get(res[1][1]))
+
+res = SQLite.query(db, "SELECT value FROM meta WHERE key ='sente_time';")
+senteTime = parse(Int, get(res[1][1]))
 
 #Adding the move to the moves table
 if isMoveMovement(newMove) #((sx,sy),(tx,ty), promotion)
 	#promote
 	if newMove.option == "!"
-		SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, option) VALUES ($(numberOfMoves+1), 'move', $(newMove.sourcex), $(newMove.sourcey), $(newMove.targetx), $(newMove.targety) ,\'!\')")
+    if newMove.targetx2 != nothing && newMove.targex3 != nothing
+		  SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, option, targetx2, targety2, targetx3, targety3) VALUES ($(numberOfMoves+1), 'move', $(newMove.sourcex), $(newMove.sourcey), $(newMove.targetx), $(newMove.targety), \'!\' , $(newMove.targetx2), $(newMove.targety2), $(newMove.targetx3), $(newMove.targety3))")
+    elseif newMove.targetx2 != nothing
+      SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, option, targetx2, targety2) VALUES ($(numberOfMoves+1), 'move', $(newMove.sourcex), $(newMove.sourcey), $(newMove.targetx), $(newMove.targety),\'!\', $(newMove.targetx2), $(newMove.targety2))")
+    else
+      SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, option) VALUES ($(numberOfMoves+1), 'move', $(newMove.sourcex), $(newMove.sourcey), $(newMove.targetx), $(newMove.targety),\'!\')")
+    end
 	else
-		SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety) VALUES ($(numberOfMoves+1), 'move', $(newMove.sourcex), $(newMove.sourcey), $(newMove.targetx), $(newMove.targety))")
+    if newMove.targetx2 != nothing && newMove.targex3 != nothing
+      SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, targetx2, targety2, targetx3, targety3) VALUES ($(numberOfMoves+1), 'move', $(newMove.sourcex), $(newMove.sourcey), $(newMove.targetx), $(newMove.targety), $(newMove.targetx2), $(newMove.targety2), $(newMove.targetx3), $(newMove.targety3))")
+    elseif newMove.targetx2 != nothing
+      SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, targetx2, targety2) VALUES ($(numberOfMoves+1), 'move', $(newMove.sourcex), $(newMove.sourcey), $(newMove.targetx), $(newMove.targety), $(newMove.targetx2), $(newMove.targety2))")
+    else
+      SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety) VALUES ($(numberOfMoves+1), 'move', $(newMove.sourcex), $(newMove.sourcey), $(newMove.targetx), $(newMove.targety))")
+    end
 	end
 elseif isMoveDrop(newMove) #option contains piece.
-	SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, option) VALUES ($(numberOfMoves+1), 'drop', 0, 0, $(newMove.targetx), $(newMove.targety) ,'$(newMove.option.name)')")
+	SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, option) VALUES ($(numberOfMoves+1), 'drop', 0, 0, $(newMove.targetx), $(newMove.targety) ,'$( getDatabaseName(newMove.option.name) )')")
 elseif isMoveResign(newMove)
 	SQLite.query(db, "INSERT INTO moves (move_number, move_type,sourcex, sourcey, targetx, targety) VALUES ($(numberOfMoves+1), 'resign', 0, 0, 0, 0)")
 end
 
-if getCurrentPlayer(currentBoard) == BLACK
-  res = SQLite.query(db, "SELECT value FROM meta WHERE key ='sente_time';")
-  senteTime = parse(Int, get(res[1][1]))
-#  SQLite.query(db, "INSERT INTO meta (key, value) VALUES ('sente_time', $(senteTime - usedTime + timeAdd))") #TO CAMILLE, INSERT IS PROBABLY WRONG BECAUSE IT MAKES A NEW ROW. WE JUST WANT TO SET THE VALUES.
-  SQLite.query(db, "UPDATE meta SET value = $(senteTime - usedTime + timeAdd) WHERE key='sente_time'")
 
+if getCurrentPlayer(currentBoard) == BLACK
+  senteTime =  senteTime-usedTime+timeAdd
+  tracePrint( ("SENTE TIME LEFT IS NOW ", senteTime) )
+#  SQLite.query(db, "INSERT INTO meta (key, value) VALUES ('sente_time', $(senteTime - usedTime + timeAdd))") #TO CAMILLE, INSERT IS PROBABLY WRONG BECAUSE IT MAKES A NEW ROW. WE JUST WANT TO SET THE VALUES.
+  SQLite.query(db, "UPDATE meta SET value = $(senteTime) WHERE key='sente_time'")
 
 
 elseif getCurrentPlayer(currentBoard) == WHITE
-  res = SQLite.query(db, "SELECT value FROM meta WHERE key ='gote_time';")
-  goteTime = parse(Int, get(res[1][1]))
+  goteTime = goteTime-usedTime+timeAdd
+  tracePrint( ("GOTE TIME LEFT IS NOW ", goteTime ) )
   #SQLite.query(db, "INSERT INTO meta (key, value) VALUES ('gote_time', $(goteTime - usedTime + timeAdd))")
-  SQLite.query(db, "UPDATE meta SET value = $(goteTime - usedTime + timeAdd) WHERE key='gote_time'")
+  SQLite.query(db, "UPDATE meta SET value = $(goteTime) WHERE key='gote_time'")
 end
 
 #TRACING
@@ -431,3 +535,5 @@ board = generateCurrentBoard()
 Base.eval(:(have_color=true))
 #TRACEPRINT
 printBoard(board, false)
+
+tracePrint(checkTimeOut(senteTime, goteTime))

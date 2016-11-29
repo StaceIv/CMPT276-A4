@@ -164,7 +164,7 @@ function generateNextBoard(board, db, index)
     #update the board with a regular move or double move, or a triple move
     if targetx2 != nothing && targety2 != nothing
       if targetx3 != nothing && targety3 != nothing
-        newMove = initMoveTripleMovement(sourcex, sourcey, targetx, targety, option, targetx2, targety2)
+        newMove = initMoveTripleMovement(sourcex, sourcey, targetx, targety, option, targetx2, targety2, targetx3, targety3)
       else
         newMove = initMoveDoubleMovement(sourcex, sourcey, targetx, targety, option, targetx2, targety2)
       end
@@ -188,7 +188,8 @@ function generateNextBoard(board, db, index)
     # res = SQLite.query(db, "SELECT targety2 FROM moves WHERE move_number = $index;")
     # targety2 = getSQLValue(res) #get(res[1][1])
 
-    newPiece = Piece(getCurrentPlayer(board),piece)
+    pieceName = getAbbName(lowercase(piece))
+    newPiece = Piece(getCurrentPlayer(board), pieceName)
     newMove = initMoveDrop(targetx, targety, newPiece)
     updateBoard(board, newMove)
 

@@ -67,8 +67,12 @@ state_wait_second = "1"
 state_message_first = "2"
 state_message_second = "3"
 number_of_states = "4"
+turn = "first"
+
+portInitialized = false
 
 function initialize()
+  global portInitialized
   # global variables
   global state = state_wait_first
   # defaults to a standard game that is untimed and cheating not allowed.
@@ -80,22 +84,88 @@ function initialize()
   global game_turn_time = "0"
   global client_one_auth = ""
   global client_two_auth = ""
+
+  global port = parse(Int, ARGS[1])
+  if portInitialized == false
+    global server = listen(port)
+  end
+  # first call to listen() will create a server waiting
+  # for incoming connections on the specified port (2000)
+  global socket1 = accept(server)
+  # do not go on untill you receive a valid game request
+  while state != state_wait_second
+    global message = readline(socket1) # Check that this is an initialization message
+    runStateMachine("first", message)
+  end
+
+  global socket2 = accept(server)
+  # do not go on untill you receive a valid game request
+  while state != state_message_first
+    global message = readline(socket2)
+    runStateMachine("second", message)
+  end
+
+  global turn = "first"
+  portInitialized = true
 end
 
 function main()
-  port = parse(Int, ARGS[1])
-  server = listen(port)
-  # first call to listen() will create a server waiting
-  # for incoming connections on the specified port (2000)
+
+  global port
+  global server
+  global socket1
+  global message
+  global socket2
+  global turn
+
   while true
-    socket=accept(server)
-    message = readline(socket)
-    runStateMachine(socket, message)
+    println("in beginning of while true loop")
+    if turn == "first"
+      println("is first infinate??")
+      message = readline(socket1)
+      println("THIS IS THE MESSAGE RECIEVED FROM PLAYER ONE: $message")
+      if length(message) == 0
+        message = readline(socket2)
+        println("THIS IS THE MESSAGE RECIEVED FROM PLAYER TWO: $message")
+        if length(message) == 0
+          sleep(1)
+          continue
+        else
+          runStateMachine(turn, message)
+          turn = "second"
+        end
+        #println("in if length of message is not 0")
+        #runStateMachine(turn, message)
+        #turn = "second"
+      else
+        runStateMachine(turn, message)
+        turn = "second"
+      end
+    else
+      println("is second infinate??")
+      message = readline(socket2)
+      println("THIS IS THE MESSAGE RECIEVED FROM PLAYER TWO: $message")
+      if length(message) == 0
+        message = readline(socket1)
+        println("THIS IS THE MESSAGE RECIEVED FROM PLAYER ONE: $message")
+        if length(message) == 0
+          sleep(1)
+          continue
+        else
+          runStateMachine(turn, message)
+          turn = "first"
+        end
+      else
+        runStateMachine(turn, message)
+        turn = "first"
+      end
+    end
+
   end
 end
 
 #"<request game>: <standard shogi>: <no cheating>: <100 seconds>: <10 seconds per turn>"
-function runStateMachine(socket, message)
+function runStateMachine(from, message)
   global state
   global game_type
   global game_legality
@@ -103,6 +173,8 @@ function runStateMachine(socket, message)
   global game_turn_time
   global client_one_auth
   global client_two_auth
+  global socket1
+  global socket2
 
   fields = split(message, ':')
   for i in 1 : length(fields)
@@ -111,16 +183,26 @@ function runStateMachine(socket, message)
   #TBR
   println("Entering state machine")
   println("State: $state")
+  println("Message: $message")
+  len = length(message)
+  println("Message length: $len")
+  #=
   println("Fields")
   for (index, value) in enumerate(fields)
     println("$index $value")
   end
+  =#
 
   if state == state_wait_first
+    println("state = $state")
     # the only valid message is "game initialization"
     if fields[1] != wcc_requestGame
       #send error message
-      write(socket, "e:You didn't register a game\n")
+      if from == "first"
+        write(socket1, "e:You didn't register a game\n")
+      else
+        write(socket2, "e:You didn't register a game\n")
+      end
       return
     end
     # go throug requested game parameters
@@ -150,96 +232,127 @@ function runStateMachine(socket, message)
     client_one_auth = randstring()
     # send back confirmation message with game parameters
     reply = string(wcs_playerOne, ":", client_one_auth, ":", game_type, ":", game_legality, ":", game_total_time, ":", game_turn_time, "\n")
-    write(socket, reply)
+    println("HERE IS THE NEXT MOVE/MESSAGE!!!!! : $reply")
+    write(socket1, reply)
 
     # change state
     state = state_wait_second
   elseif state == state_wait_second
+    println("state = $state . WE ARE WAITING FOR A MESSAGE FROM SECOND")
+    #println("we have recieved: $reply")
     if fields[1] == wcc_requestGame
       client_two_auth = randstring()
     else
-      write(socket, "e:You didn't register a game\n")
+      write(socket2, "e:You didn't register a game\n")
       return
     end
 
     reply = string(wcs_playerTwo, ":", client_two_auth, ":", game_type, ":", game_legality, ":", game_total_time, ":", game_turn_time, "\n")
-    write(socket, reply)
+    println("HERE IS THE NEXT MOVE/MESSAGE!!!!! : $reply")
+    write(socket2, reply)
 
     state = state_message_first
+
   elseif state == state_message_first || state == state_message_second
 
+    println("state = $state. WE ARE WAITING FOR A MESSAGE FROM SECOND OR(?) FIRST")
+    #println("we have recieved: $reply")
+    println("state is message first OR message second-------------------------")
     # once connected to the server,
     # clients can send each other custom messages at any time
     if fields[1] == wcc_message
-      reply = "\n"
       # if sent by client one, pass it to client two
       if fields[2] == client_one_auth
         reply = string(fields[1], ":", client_two_auth, ":", fields[3], "\n")
+        println("HERE IS THE NEXT MOVE/MESSAGE!!!!! : $reply")
+        write(socket2, reply) ################################################################################TODO
       elseif fields[2] == client_two_auth
         reply = string(fields[1], ":", client_one_auth, ":", fields[3], "\n")
-      end
-      # if the message was not sent by any of our cllients, ignore it
-      if reply != ""
-        write(socket, reply)
+        println("HERE IS THE NEXT MOVE/MESSAGE!!!!! : $reply")
+        write(socket1, reply) ################################################################################TODO
       end
       return
     end
 
     if fields[1] == wcc_requestGame
-      write(socket, "e:Invalid wincode\n")
+      if from == "first"
+        write(socket1, "e:Invalid wincode\n")
+      elseif from == "second"
+        write(socket2, "e:Invalid wincode\n")
+      end
       return
     end
 
     if fields[1] == wcc_quitGame || fields[1] == wcc_opponentCheating
-      # send draw message to both clients
-      reply = string(wcs_draw, ":", client_one_auth, "\n")
-      write(socket, reply)
-      reply = string(wcs_draw, ":", client_two_auth, "\n")
-      write(socket, reply)
-      #reset the machine
+
+      close(socket1)
+      close(socket2)
       initialize()
+      main()
       return
     end
 
     if fields[1] == wcc_badPayload
-      write(socket, "e:Bad payload\n")
+      if from == "first"
+        write(socket2, "e:Bad payload\n")
+      elseif from == "second"
+        write(socket1, "e:Bad payload\n")
+      end
       return
     end
 
     if fields[1] != wcc_playMove
-      write(socket, "e:Bad payload\n")
+      if from == "first"
+        write(socket1, "e:Bad payload\n")
+      elseif from == "second"
+        write(socket2, "e:Bad payload\n")
+      end
       return
     end
 
     # wincode is correct
     if state == state_message_first
       # make sure that we received a move message from player one
-      if fields[2] != client_one_auth
+
+        println("state = $state. WE ARE WAITING FOR A MESSAGE FROM FIRST")
+      #  println("we have recieved: $reply")
+
+      if fields[2] != client_one_auth && length(client_one_auth) > 0
         reply = string(wcs_notYourTurn, ":", fields[2], "\n")
-        write(socket, reply)
+        println("HERE IS THE NEXT MOVE/MESSAGE!!!!! writing to (socket2) : $reply")
+        write(socket2, reply)
         return
       end
 
       # we have a valid "move" message sent from client one
       # pass it to client two
-      reply = replace(message, ":", client_one_auth, ":", client_two_auth, "\n")
-      write(socket, reply)
+      reply = replace(message, client_one_auth, client_two_auth)
+      println("HERE IS THE NEXT MOVE/MESSAGE, send from client 1 to 2 (288)!!!!! (socket2) : $reply")
+      write(socket2, reply)
       # and wait for a message from client two
       state = state_message_second
     end
 
     if state == state_message_second
+
+        println("state = $state. WE ARE WAITING FOR A MESSAGE FROM SECOND")
+        #println("we have recieved: $reply")
       # make sure that we received a move message from player two
-      if fields[2] != client_two_auth
+#      --THIS IS WRONG? ERRORS
+      if fields[2] != client_two_auth && length(client_two_auth) > 0
         reply = string(wcs_notYourTurn, ":", fields[2], "\n")
-        write(socket, reply)
+        println("HERE IS THE NEXT MOVE/MESSAGE!!!!! (socket1) : $reply")
+        write(socket1, reply)
         return
       end
 
+
       # we have a valid "move" message sent from client two
       # pass it to client one
-      reply = replace(message, ":", client_two_auth, ":", client_one_auth, "\n")
-      write(socket, reply)
+      reply = replace(message, client_two_auth, client_one_auth)
+      println("WE GOT THIS: $reply")
+      println("HERE IS THE NEXT MOVE/MESSAGE!!!!! send from client 2 to 1 (308) (socket1) : $reply")
+      write(socket1, reply)
       # and wait for a message from client two
       state = state_message_first
     end
@@ -250,58 +363,3 @@ end
 
 initialize()
 main()
-#if wincode=0; start of a game
-
-#The server responds with the wincode specifying if they are second or first as well
-# as an auth code that must be included in every set of information sent to the server
-#What server receives
-
-#"<wincode>: <gametype>: <legality>: <timelimit>: <limitadd>"
-#What server sends
-
-#"<wincode>:<authString>:<gametype>:<legality>:<timelimit>:<limitadd>”
-#wincode:player 1 (0) or 2 (1)
-#=
-function gameInitialization(payload_C)
-
-  payload=split(payload_C,":")
-  payloadToClient=[]
-  if payload[1]=='0'
-    #begin a game
-  end
-  #Finding the gametype
-  if payload[2]=='S' || payload[2]=='s'
-    gameType = 'S'
-    #standard
-  elseif payload[2]=='M' || payload[2]=='m'
-    gameType = 'M'
-    #minishogi
-  elseif payload[2]=='C' || payload[2]=='c'
-    gameType = 'C'
-    #chu
-  else
-    #not specified
-    println("What.")
-  end
-
-  #checking legality of game
-  if payload[3]=='0'
-    #cheating game
-    cheating = true
-  elseif payload[3]=='1'
-    #non cheating game
-    cheating = false
-  else
-    #not specified
-  end
-
-  #new for each game. NOT EACH TURN/COMMUNICATION/MESSAGE
-  AuthString = randstring()
-end
-
-#listen for payloads with moves, if the payload is valid (read: syntactically correct) forward it to the other player with wincode 9.
-#"<wincode>:<authString>:<movenum>:<movetype>:<sourcex>:<sourcey>:<targetx>:<targety>:<option>:<cheating>:<targetx2>:<targety2>"
-function serverListen(payload)
-
-end
-=#

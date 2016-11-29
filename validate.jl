@@ -13,10 +13,6 @@ function checkLegal(board::Board, move)
   legal = allLegalMoves(board)
   #tracePrint("BLAH")
 
-  # tracePrint("Move")
-  # tracePrint(move)
-  # tracePrint(legal)
-
   if move in legal
     return true
   else
@@ -100,8 +96,8 @@ function replay()
 end
 
 #printMoves()
-result = replay() #results in 0 if all moves are valid, or the move_number of an invalid move
-println(result)
+global resultValidate = replay() #results in 0 if all moves are valid, or the move_number of an invalid move
+println(resultValidate)
 
 if !isdefined(ARGS, 1)
   usage("File Name is mandatory")

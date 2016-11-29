@@ -1,3 +1,5 @@
+
+
 ## WIN DEPENDENCIES
 function winState(board::Board)
 
@@ -45,4 +47,16 @@ function winState(board::Board)
 
   #if no one resigned, and no one took a king
   return "?"
+end
+
+function checkTimeOut(blackTime, whiteTime)
+  if blackTime <= 0 && whiteTime > 0
+    println("Black player timeout")
+    return "W"
+  elseif whiteTime <= 0 && blackTime > 0
+    println("White player timeout")
+    return "B"
+  elseif whiteTime > 0 && blackTime > 0
+    return "?"
+  end
 end
