@@ -122,43 +122,26 @@ function main()
     println("in beginning of while true loop")
     if turn == "first"
       println("is first infinate??")
-      message = readline(socket1)
-      println("THIS IS THE MESSAGE RECIEVED FROM PLAYER ONE: $message")
-      if length(message) == 0
-        message = readline(socket2)
-        println("THIS IS THE MESSAGE RECIEVED FROM PLAYER TWO: $message")
-        if length(message) == 0
-          sleep(1)
-          continue
-        else
-          runStateMachine(turn, message)
-          turn = "second"
-        end
-        #println("in if length of message is not 0")
-        #runStateMachine(turn, message)
-        #turn = "second"
-      else
+      try
+        message = readline(socket1)
         runStateMachine(turn, message)
-        turn = "second"
+      catch
+        close(socket1)
+        close(socket2)
+        initialize()
       end
+      turn = "second"
     else
       println("is second infinate??")
-      message = readline(socket2)
-      println("THIS IS THE MESSAGE RECIEVED FROM PLAYER TWO: $message")
-      if length(message) == 0
-        message = readline(socket1)
-        println("THIS IS THE MESSAGE RECIEVED FROM PLAYER ONE: $message")
-        if length(message) == 0
-          sleep(1)
-          continue
-        else
-          runStateMachine(turn, message)
-          turn = "first"
-        end
-      else
+      try
+        message = readline(socket2)
         runStateMachine(turn, message)
-        turn = "first"
+      catch
+        close(socket1)
+        close(socket2)
+        initialize()
       end
+      turn = "first"
     end
 
   end
@@ -194,7 +177,7 @@ function runStateMachine(from, message)
   =#
 
   if state == state_wait_first
-    println("state = $state")
+    println("state = state_wait_first")
     # the only valid message is "game initialization"
     if fields[1] != wcc_requestGame
       #send error message
@@ -231,6 +214,7 @@ function runStateMachine(from, message)
     # generate authentication code for the client
     client_one_auth = randstring()
     # send back confirmation message with game parameters
+    println("Volim Stasu")
     reply = string(wcs_playerOne, ":", client_one_auth, ":", game_type, ":", game_legality, ":", game_total_time, ":", game_turn_time, "\n")
     println("HERE IS THE NEXT MOVE/MESSAGE!!!!! : $reply")
     write(socket1, reply)
@@ -238,8 +222,7 @@ function runStateMachine(from, message)
     # change state
     state = state_wait_second
   elseif state == state_wait_second
-    println("state = $state . WE ARE WAITING FOR A MESSAGE FROM SECOND")
-    #println("we have recieved: $reply")
+    println("state = state_wait_second")
     if fields[1] == wcc_requestGame
       client_two_auth = randstring()
     else
@@ -252,12 +235,8 @@ function runStateMachine(from, message)
     write(socket2, reply)
 
     state = state_message_first
-
   elseif state == state_message_first || state == state_message_second
-
-    println("state = $state. WE ARE WAITING FOR A MESSAGE FROM SECOND OR(?) FIRST")
-    #println("we have recieved: $reply")
-    println("state is message first OR message second-------------------------")
+     println("state is message first OR message second")
     # once connected to the server,
     # clients can send each other custom messages at any time
     if fields[1] == wcc_message
@@ -314,32 +293,30 @@ function runStateMachine(from, message)
     if state == state_message_first
       # make sure that we received a move message from player one
 
-        println("state = $state. WE ARE WAITING FOR A MESSAGE FROM FIRST")
-      #  println("we have recieved: $reply")
-
-      if fields[2] != client_one_auth && length(client_one_auth) > 0
+      if fields[2] == client_two_auth
         reply = string(wcs_notYourTurn, ":", fields[2], "\n")
-        println("HERE IS THE NEXT MOVE/MESSAGE!!!!! writing to (socket2) : $reply")
+        println("HERE IS THE NEXT MOVE/MESSAGE!!!!! (socket2) : $reply")
         write(socket2, reply)
         return
       end
 
-      # we have a valid "move" message sent from client one
-      # pass it to client two
-      reply = replace(message, client_one_auth, client_two_auth)
-      println("HERE IS THE NEXT MOVE/MESSAGE, send from client 1 to 2 (288)!!!!! (socket2) : $reply")
-      write(socket2, reply)
-      # and wait for a message from client two
-      state = state_message_second
+
+      if fields[2] == client_one_auth
+        # we have a valid "move" message sent from client one
+        # pass it to client two
+        reply = replace(message, client_one_auth, client_two_auth)
+        println("HERE IS THE NEXT MOVE/MESSAGE, send from client 1 to 2 (288)!!!!! (socket2) : $reply")
+        write(socket2, reply)
+        # and wait for a message from client two
+        state = state_message_second
+      end
+      return
     end
 
     if state == state_message_second
-
-        println("state = $state. WE ARE WAITING FOR A MESSAGE FROM SECOND")
-        #println("we have recieved: $reply")
       # make sure that we received a move message from player two
-#      --THIS IS WRONG? ERRORS
-      if fields[2] != client_two_auth && length(client_two_auth) > 0
+#      -------------------------------------------------------------------------------THIS IS WRONG
+      if fields[2] == client_one_auth
         reply = string(wcs_notYourTurn, ":", fields[2], "\n")
         println("HERE IS THE NEXT MOVE/MESSAGE!!!!! (socket1) : $reply")
         write(socket1, reply)
@@ -347,14 +324,15 @@ function runStateMachine(from, message)
       end
 
 
-      # we have a valid "move" message sent from client two
-      # pass it to client one
-      reply = replace(message, client_two_auth, client_one_auth)
-      println("WE GOT THIS: $reply")
-      println("HERE IS THE NEXT MOVE/MESSAGE!!!!! send from client 2 to 1 (308) (socket1) : $reply")
-      write(socket1, reply)
-      # and wait for a message from client two
-      state = state_message_first
+      if fields[2] == client_two_auth
+        # we have a valid "move" message sent from client two
+        # pass it to client one
+        reply = replace(message, client_two_auth, client_one_auth)
+        println("HERE IS THE NEXT MOVE/MESSAGE!!!!! send from client 2 to 1 (308) (socket1) : $reply")
+        write(socket1, reply)
+        # and wait for a message from client two
+        state = state_message_first
+      end
     end
   else
     println("Wrong state!")

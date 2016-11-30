@@ -41,7 +41,7 @@ function runclient()
     reply = readline(clientside)
     println("Move received")
     println("Server message: $reply")
-  #=  if order == 1 && moveNumber == 9
+    if order == 1 && moveNumber == 7
       # send a terminate message
       println("sending the termination move")
       message = "1:$authString"
@@ -54,7 +54,7 @@ function runclient()
       println("Server message: $reply")
       # exit the loop
       break
-    end=#
+    end
     if order != 1 && moveNumber == 9
       # exit the loop
       break

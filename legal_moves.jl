@@ -137,9 +137,13 @@ function doubleMove(legal::Array{Move}, board::Board, piece::Piece, sourcex::Int
   secondLegal = Array{Move}(0)
   move1(firstLegal, board, piece, sourcex, sourcey, canPromote)
   if length(firstLegal) != 0
-    if isNullPiece(getPiece(board, firstLegal[end].targetx, firstLegal[end].targety)) || piece.name == Lion || piece.name == HornedFalcon || piece.name == SoaringEagle || piece.name == PDragonHorse #=Horned Falcon=# || piece.name == PDragonKIng #=Soaring Eagle=# || piece.name == PLion #=Lion Hawk=#
-                                 #cannot make the second move after capturing, unless it is a lion, horned falcon, soaring eagle, free eagle, or lion hawk
-      move2(secondLegal, board, piece, firstLegal[end].targetx, firstLegal[end].targety, canPromote)
+    if isNullPiece(getPiece(board, firstLegal[end].targetx, firstLegal[end].targety)) || piece.name == Lion || piece.name == HornedFalcon || piece.name == SoaringEagle || piece.name == PDragonHorse #=Horned Falcon=# || piece.name == PDragonKing #=Soaring Eagle=# || piece.name == PLion #=Lion Hawk=#
+                                 #cannot make the second move after capturing, unless the moving piece is a lion, horned falcon, soaring eagle, free eagle, or lion hawk
+
+      #create a deep copy of the board, simulating the first move so that igui is possible
+      tempBoard = deepcopy(board)
+      updateBoard(tempBoard, firstLegal[1])
+      move2(secondLegal, tempBoard, piece, firstLegal[end].targetx, firstLegal[end].targety, canPromote)
       #= firstLegal and secondLegal will either have 0, 1 or 2 elements; 0 if there is no legal space to move in, 1 if there is, and 2 if that space is
       a promotion zone (one for moving and promoting, and one for just moving. The move with a promote will be the 2nd element) =#
 
@@ -170,14 +174,19 @@ function tripleMove(legal::Array{Move}, board::Board, piece::Piece, sourcex::Int
   if length(firstLegal) != 0
     firstMove = firstLegal[end]
     if isNullPiece(getPiece(board, firstMove.targetx, firstMove.targety)) #Piece must stop moving if it captures, only continue if the target square is empty
-      move2(secondLegal, board, piece, firstMove.targetx, firstMove.targety, canPromote)
+      ##simulating the first move, so that the board is updated for the second move
+      tempBoard = deepcopy(board)
+      updateBoard(tempBoard, firstLegal[1])
+      move2(secondLegal, tempBoard, piece, firstMove.targetx, firstMove.targety, canPromote)
       #= firstLegal and secondLegal will either have 0, 1 or 2 elements; 0 if there is no legal space to move in, 1 if there is, and 2 if that space is
       a promotion zone (one for moving and promoting, and one for just moving. The move with a promote will be the 2nd element) =#
 
       if length(secondLegal) != 0 #first and second moves are legal
         secondMove = secondLegal[end]
         if isNullPiece(getPiece(board, secondMove.targetx, secondMove.targety)) #Piece must stop moving if it captures, only continue if the target square is empty
-          move3(thirdLegal, board, piece, secondLegal[end].targetx, secondLegal[end].targety, canPromote)
+
+          updateBoard(tempBoard, secondLegal[1])
+          move3(thirdLegal, tempBoard, piece, secondLegal[end].targetx, secondLegal[end].targety, canPromote)
 
           if length(thirdLegal) != 0
             lastMove = thirdLegal[end]

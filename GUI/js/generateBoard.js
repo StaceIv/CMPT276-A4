@@ -6,14 +6,39 @@ var blackHandJS = new Array();
 var statusJS; //changed at every function so julia know whats going on.
 var currentPlayer
 var cheat;
+var allowPromotion;
+var promCoords; //coords to check for promotion
 var movesArrayJS = new Array();
 var validArrJS = new Array();
 
 function setCheating(cheatJulia){
     cheat =(cheatJulia)=="legal"?false:true; //legal or cheating
+    if(cheat){
+        $(".promotePiece").css("visibility","visible");
+    }
+}
+function setAllowPromotion(allowProm){
+    allowPromotion = allowProm;
+    if(!cheat){
+    if (allowProm == false){
+        document.getElementById("promoteCheckBox").checked = false;
+         $(".promotePiece").css("visibility","hidden");
+    }
+    else{
+         $(".promotePiece").css("visibility","visible");
+    }
+    }
 }
 
-function getPlayer(player) {
+function startLoadingAnimation(){
+    $(".loader").css("visibility","visible");
+}
+function stopLoadingAnimation(){
+    $(".loader").css("visibility","hidden");
+}
+
+
+function setPlayer(player) {
     currentPlayer = player
     document.getElementById("currentPlayer").innerHTML = player
 }
@@ -446,6 +471,9 @@ function moveFunction(element) {
         getValidArr(validArrJS, len+1);
         }
 
+        //FOR CHECKING ALLOWED PROMOTION
+        statusJS = "checkPromotionJS"
+        promCoords = element.id;
 
 
     } else {
@@ -556,6 +584,9 @@ function resign() {
 function winCheck() {
     statusJS = "checkWin"
 }
+function tips(){
+    statusJS = "tips";
+}	
 
 
 

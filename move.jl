@@ -412,6 +412,7 @@ end
 function getMoveScore(board::Board, move::Move)
   trash, garb, node = initMonteCarloRoot(board, 500)
 
+
   highest = getNodeAverageScore(node.children[1])
   lowest = getNodeAverageScore(node.children[1])
   sum = 0
@@ -419,7 +420,7 @@ function getMoveScore(board::Board, move::Move)
   score = -9999999
   for i in 1:length(node.children)-1 #skip resign, the last index
     currScore = getNodeAverageScore(node.children[i])
-    if move == node.children[i].move
+    if move.sourcex == node.children[i].move.sourcex && move.sourcey == node.children[i].move.sourcey && move.targetx == node.children[i].move.targetx && move.targety == node.children[i].move.targety
       score = currScore
     end
     if currScore > highest
@@ -435,13 +436,16 @@ function getMoveScore(board::Board, move::Move)
 end
 
 function getMoveWorth(board::Board, move::Move)
-  score = getMoveScore(board, move)
+  score, lowest, highest, average = getMoveScore(board, move)
   deviation = (highest-lowest)/6
   descriptor = ""
-  if score <= -9999999
+  tracePrint(("score is ", score))
+  if score <= -9999
     descriptor = "Game Losing!"
   elseif score <= lowest
-    descriptor = "You have dishonored your family."
+    descriptor = rand(["You have dishonored your family."
+                        , "You shall writhe in the depths of your shame until the end of your days"
+                        , "You clearly do not even begin to grasp the simplest of the fundamentals of this game, or of any other aspect of your life."])
   elseif score <= lowest+deviation*1
     descriptor = "So bad! Terrible!"
   elseif score <= lowest+deviation*2
@@ -459,6 +463,11 @@ function getMoveWorth(board::Board, move::Move)
   else
     descriptor = "Adequate."
   end
+
+  descriptor = string("The AI says: ", descriptor)
+
+  return descriptor
+
 end
 
 

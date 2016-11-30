@@ -75,7 +75,8 @@ h3 { color: #4a89dc; }
 
 .group {
 	position: relative;
-	margin-bottom: 45px;
+	margin-top:80;
+	margin-bottom: 20px;
 }
 
 input {
@@ -237,3 +238,58 @@ footer img {
 footer img:hover { opacity: .83; }
 
 footer img:focus , footer a:focus { outline: none; }
+
+h1{
+    font-size: 300%;
+    padding-left: 20px;
+    padding-top: 20px;
+}
+
+
+
+
+/*time for bad puns
+  I dont actually know html and css, i just copied and pasted something and fiddled with values*/
+#puns {
+    color: purple;
+    font-size: 1.5em;
+    margin-top: -450px;
+    position: relative;
+    left:55%;
+    z-index:2;
+    text-align: center;
+    line-height: 100%;
+
+	width: 250px;
+    
+}
+
+.pop {
+    animation: pop 1s infinite,
+}
+.tilt {
+    animation: tilt 2s infinite,
+}
+
+@keyframes pop {
+    from {
+        transform:scale(0.75)
+    }
+    50% {
+        transform:scale(1.5)
+    }
+    to {
+        transform:scale(0.75)
+    }
+}
+@keyframes tilt {
+    from {
+        transform: rotate(-10deg);
+    }
+    50% {
+        transform: rotate(10deg);
+    }
+    to {
+        transform: rotate(-10deg);
+    }
+}

@@ -22,7 +22,11 @@ function initialization(ip, port, cheating, timelimit, limitadd, game)
 
   println("Connected")
   println("Server message: $reply")
+end
 
+function fullScreen(window)
+  position(window, 0, 0)
+  size(window, 1366, 768)
 end
 
 #=
@@ -31,28 +35,21 @@ end
 =#
 function parserOfMessage(reply)
 
-#=
-  port = parse(Int, port)
-  clientside = connect("$ip", port) #connects client to server
-
-  reply = readline(clientside) #Reply from server
-=#
-
   someMove = split(reply,":")
 
-  sourcex = someMove[5]
-  sourcey = someMove[6]
-  targetx = someMove[7]
-  targety = someMove[8]
+  sourcex = "$(parse(Int, someMove[5]))"
+  sourcey = "$(parse(Int, someMove[6]))"
+  targetx = "$(parse(Int, someMove[7]))"
+  targety = "$(parse(Int, someMove[8]))"
 
   promotion = someMove[9]
   cheating = someMove[10]
 
-  targetx2 = someMove[11]
-  targety2 = someMove[12]
+  targetx2 = "$(parse(Int, someMove[11]))"
+  targety2 = "$(parse(Int, someMove[12]))"
 
-  targetx3 = someMove[13]
-  targety3 = someMove[14]
+  targetx3 = "$(parse(Int, someMove[13]))"
+  targety3 = "$(parse(Int, someMove[14]))"
 
   resetArgs()
 
@@ -62,24 +59,35 @@ function parserOfMessage(reply)
   push!(ARGS, targety)
   push!(ARGS, promotion)
 
-  if targetx2 != 0
+  if targetx2 != 0 && targetx2 != nothing
     push!(ARGS, targetx2)
     push!(ARGS, targety2)
   end
-  if targetx3 != 0
+  if targetx3 != 0 && targetx3 != nothing
     push!(ARGS, targetx3)
     push!(ARGS, targety3)
   end
 
-  if someMove[4] == 1
+  @js w alert("in parserOfMessage!")
+
+  println("--------------------------------------------------------------------EIGHT")
+  println("SOME MOVE[4]   =  $(someMove[4])")
+
+  if parse(Int, someMove[4]) == 2
+    println("in if statement! someMove[4] = 2")
     include("move_user_move.jl")
-  elseif someMove[4] == 2
+      println("--------------------------------------------------------------------NINE")
+    updateTable()
+      println("--------------------------------------------------------------------TEN")
+  elseif parse(Int, someMove[4]) == 3
     include("move_user_drop.jl")
+    updateTable()
   else
     include("move_user_resign.jl")
+    updateTable()
   end
 
-  updateTable()
+  @js w alert("boardShould be updated.")
 end
 
 #=
@@ -112,24 +120,9 @@ function setNetPacket(ip, port, moveNum, as, sourcex, sourcey, moveType, targetx
   x3 = targetx3
   y3 = targety3
 
-
   payload = "$wincode:$authString:$mn:$typeOfMove:$x:$y:$x1:$y1:$promoted:$cheat:$x2:$y2:$x3:$y3\n"
-#  payload = "2:$authString:1:1:5:9:4:8:F:0:0:0:0:0"
+
   return payload
-
-#  println(payload)
-#  println("11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111")
-
-#  port = parse(Int, port)
-#  clientside = connect("$ip", port)
-
-#  println(clientside, payload)
-  #return payload
-
-#  fromServer = readline(clientside)   # Read reply from server?????????????????????????? TODO
-  #println(fromServer)                 # Print reply from server, which should be next move??? Not needed?? TODO
-#  return fromServer #  TODO - Stacey, should it do this?????????????????????????????????? Return the server reply then etc?
-  #Just return the message from server, don't call parser here.
 end
 
 
@@ -198,15 +191,10 @@ function setNetPacketDB(ip, port, moveNum, as, filename)
   end
 
   payload = ("$wincode:$authString:$mn:$typeOfMove:$x:$y:$x1:$y1:$promoted:$cheat:$x2:$y2:$x3:$y3")
-  println( payload)
-  #return payload
-  port = parse(Int, port)
-  clientside = connect("$ip", port)
+  println(payload)
 
-  println(clientside, payload)
-
+  return payload
 end
-
 
 #only for making moves
 function setNetPacketResign(ip, port, moveNum, as, sourcex, sourcey, moveType, targetx, targety, option, cheating, targetx2, targety2, targetx3, targety3)
@@ -229,13 +217,7 @@ function setNetPacketResign(ip, port, moveNum, as, sourcex, sourcey, moveType, t
   payload = ("$wincode:$authString:$mn:$typeOfMove:$x:$y:$x1:$y1:$promoted:$cheat:$x2:$y2:$x3:$y3")
 
   println(payload)
-  #println("11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111")
-
-  port = parse(Int, port)
-  clientside = connect("$ip", port)
-
-  println(clientside, payload)
-  #return payload
+  return payload
 end
 
 
@@ -263,12 +245,20 @@ load!(startWindow,"GUI/css/startWindow.css")
 
 sleep(3)
 tools(startWindow)
+fullScreen(startWindow)
 
-body!(startWindow, "
+######PUN GRABBING###########
+f = open("puns.txt")
+lines = readlines(f)
+i = rand(1:length(lines))
+pun = lines[i]
+close(f)
+#############################9
+
+body!(startWindow, string("
 
 
-
-<h1>Welcome to SHOGI</h1>
+<h1>ShogiXTreme-o-Rama</h1>
 
 
 <div id='holder'>
@@ -308,11 +298,13 @@ body!(startWindow, "
     </div>
  </div>
 
-
 </div>
 
+<div class='tilt'>
+    <div  id='puns' class='pop'> ", pun, "</div>
+</div>
 
-")
+"))
 
 status =""
 while status != "exit"
@@ -346,7 +338,7 @@ end
 
 close(startWindow)
 # # TESTING STUFF
-
+#
 # if status == "contGame"
 #     testingWindow = Window()
 #     sleep(3)
@@ -354,12 +346,12 @@ close(startWindow)
 #     load!(testingWindow,"GUI/js/json3.min.js")
 #     load!(testingWindow,"GUI/js/generateBoard.js")
 #     load!(testingWindow,"GUI/css/test.css")
-
+#
 #     sleep(3)
 #     tools(testingWindow)
-
+#
 #     body!(testingWindow, "
-
+#
 #         <form>
 #       <div class='group'>
 #         <input type='text' id='contText'><span class='highlight'></span><span class='bar'></span>
@@ -376,10 +368,10 @@ close(startWindow)
 #         </div>
 #      </div>
 #     </form>
-
-
+#
+#
 #     ")
-
+#
 #     status =""
 #     while status != "exit"
 #         sleep(0.01)
@@ -395,27 +387,25 @@ close(startWindow)
 #             break
 #             #status = @js testingWindow resetStatus()
 #         end
-
+#
 #         if status == "replayGame"
 #             println("replay game clicked")
 #             filename = @js testingWindow replayGame()
 #             break
 #             #status = @js testingWindow resetStatus()
 #         end
-
-
+#
+#
 #     end
-
+#
 #     if status == "exit"
 #       quit()
 #     end
-
+#
 #     close(testingWindow)
-
+#
 #     # END OF TESTING
 # end
-
-
 
 
 
@@ -433,6 +423,7 @@ if status == "newGame"
 
         sleep(3)
         tools(newGameWindow)
+        fullScreen(newGameWindow)
         body!(newGameWindow, "
 
     <h1>Create New Game</h1>
@@ -679,27 +670,27 @@ if status == "newGame"
 #What is being selected : Host, Remote, no connection
         status =""
         while status != "exit"
-            sleep(0.01)
-            status = @js newGameWindow statusJS
+          sleep(0.01)
+          status = @js newGameWindow statusJS
 
-            if status == "continue"
-                println("continue game clicked")
-                @js newGameWindow getValues()
-                filename = @js newGameWindow filenameJS
-                game =@js newGameWindow gameTypeJS
-                cheating =@js newGameWindow cheatingJS
-                timelimit=@js newGameWindow timelimitJS
-                limitadd=@js newGameWindow limitaddJS
-                gameDifficulty = @js newGameWindow difficultyJS
-                flip = @js newGameWindow flipJS
-                goFirst = @js newGameWindow goFirstJS
-                gameChosen = @js newGameWindow gameChosenJS
-                ip = @js newGameWindow ipJS
-                port = @js newGameWindow portJS
+          if status == "continue"
+            println("continue game clicked")
+            @js newGameWindow getValues()
+            filename = @js newGameWindow filenameJS
+            game =@js newGameWindow gameTypeJS
+            cheating =@js newGameWindow cheatingJS
+            timelimit=@js newGameWindow timelimitJS
+            limitadd=@js newGameWindow limitaddJS
+            gameDifficulty = @js newGameWindow difficultyJS
+            flip = @js newGameWindow flipJS
+            goFirst = @js newGameWindow goFirstJS
+            gameChosen = @js newGameWindow gameChosenJS
+            ip = @js newGameWindow ipJS
+            port = @js newGameWindow portJS
 
-                #initialization(ip, port, cheating, timelimit, limitadd, game)
-                break
-            end
+            #initialization(ip, port, cheating, timelimit, limitadd, game)
+            break
+          end
         end
 
 
@@ -778,7 +769,7 @@ elseif status == "replayGame"
   boardArray = board.boardArray
    # println("current player", getCurrentPlayer(board))
    # printHand(board, BLACK)
-   @js replayWindow getPlayer($(getCurrentPlayer(board)))
+   @js replayWindow setPlayer($(getCurrentPlayer(board)))
     for j = BOARD_DIMENSIONS:-1:1
         for i= 1:BOARD_DIMENSIONS
         # add piece to item array in js
@@ -796,14 +787,14 @@ function fillJSPlayerHand_replay(board::Board, player::AbstractString)
   handB = board.blackHand
   handW = board.whiteHand
   if player =="Black"
-  for i= 1:length(handB)
-    @js replayWindow blackHandJS.push($(handB[i]))
-  end
-elseif player == "White"
+    for i= 1:length(handB)
+      @js replayWindow blackHandJS.push($(handB[i]))
+    end
+  elseif player == "White"
     for i= 1:length(handW)
-     @js replayWindow whiteHandJS.push($(handW[i]))
+      @js replayWindow whiteHandJS.push($(handW[i]))
+    end
   end
-end
 end
 
 fillJSBoard_replay(board_step)
@@ -910,7 +901,7 @@ body!(w, "
       <div class='ripple'></div>
    </div>
 
-      <div class='promotePiece'>
+      <div class='promotePiece' id='promChk'>
         <input type='checkbox' name='cb' id='promoteCheckBox' />
         <label class='ckLabel' for='promoteCheckBox'>Promote</label>
     </div>
@@ -932,8 +923,20 @@ body!(w, "
       <div class='ripple'></div>
    </div>
 
+   <div class='paper'  onclick='tips()'>
+      <p id='num'>Tips</p>
+      <div class='ripple'></div>
+   </div>
+
     </div>
 
+<!--    LOADING THING -->
+<div class='loader'>
+    <h1>Making a move</h1>
+    <span></span>
+    <span></span>
+    <span></span>
+</div>
 
 
 
@@ -997,6 +1000,22 @@ function findLegalTarget(board::Board, x::Int, y::Int)
   return locations
 end
 
+function canPromote(player::AbstractString, y::Int)
+  if player == WHITE
+    if y >= PROMOTION_TOP
+      return true
+    else
+      return false
+    end
+  elseif player == BLACK
+    if y <= PROMOTION_BOTTOM
+      return true
+    else
+      return false
+    end
+  end
+end
+
 # legalTargets = findLegalTarget(board, 7, 10)
 # println(legalTargets)
 # #=legalTargets[1] = ((targetx, targety),(targetx2, targety2), (targetx3, targety3))
@@ -1011,11 +1030,86 @@ end
 ##################################################################################
 ##################################################################################
 
+function assignArgIfDefined(argsIndex)
+  if isdefined(ARGS, argsIndex)
+    try
+      return ARGS[argsIndex]
+    catch
+      return ARGS[argsIndex]
+    end
+  else
+    return nothing
+  end
+end
+
+
+function argsToMovementMove()
+  moveType = MOVETYPE_MOVEMENT
+  sourcex = parse(Int, ARGS[2])
+  sourcey = parse(Int, ARGS[3])
+  targetx = parse(Int, ARGS[4])
+  targety = parse(Int, ARGS[5])
+  option = assignArgIfDefined(6)
+  targetx2 = assignArgIfDefined(7)
+  if targetx2 != nothing
+    targetx2 = parse(Int, targetx2)
+  end
+  targety2 = assignArgIfDefined(8)
+  if targety2 != nothing
+    targety2 = parse(Int, targety2)
+  end
+  targetx3 = assignArgIfDefined(9)
+  if targetx3 != nothing
+    targetx3 = parse(Int, targetx3)
+  end
+  targety3 = assignArgIfDefined(10)
+  if targety3 != nothing
+    targety3 = parse(Int, targety3)
+  end
+
+  return Move(moveType, sourcex, sourcey, targetx, targety, option, targetx2, targety2, targetx3, targety3)
+end
+
+
+function argsToDropMove()
+  function numberOfMove()
+    db = SQLite.DB(ARGS[1])
+    res = SQLite.query(db, "SELECT COUNT(*) FROM moves;")
+    x = get(res[1][1])
+    return x
+  end
+  turnNum = numberOfMove()
+  turnNum = turnNum%2
+  color = ""
+  if turnNum == 0
+    color = BLACK
+  else
+    color = WHITE
+  end
+
+  moveType = MOVETYPE_DROP
+  sourcex = nothing
+  sourcey = nothing
+  targetx = parse(Int, ARGS[3])
+  targety = parse(Int, ARGS[4])
+  option = Piece(color, ARGS[2])
+  targetx2 = nothing
+  targety2 = nothing
+  targetx3 = nothing
+  targety3 = nothing
+
+  return Move(moveType, sourcex, sourcey, targetx, targety, option, targetx2, targety2, targetx3, targety3)
+end
+
+
+
+
+
 function fillJSBoard(board::Board)
   boardArray = board.boardArray
    # println("current player", getCurrentPlayer(board))
    # printHand(board, BLACK)
-   @js w getPlayer($(getCurrentPlayer(board)))
+   @js w setPlayer($(getCurrentPlayer(board)))
     for j = BOARD_DIMENSIONS:-1:1
         for i= 1:BOARD_DIMENSIONS
         # add piece to item array in js
@@ -1051,6 +1145,7 @@ fillJSBoard(board)
 #opentools(w)
 title(w,ARGS[1])
 tools(w)
+fullScreen(w)
 
 @js w generateTable();
 
@@ -1067,6 +1162,7 @@ moveType = 1  #mov 1   drpo 2 resig 3
 moveNum  = board.turnNumber
 cheating =  0 #0 not cheating 1 not cheating
 currPlayer = getCurrentPlayer(board)
+
 function updateTable()
   board = generateCurrentBoard()
   @js w deleteTables()
@@ -1082,16 +1178,25 @@ as = reply
 
 if goFirst == "White"
   if gameChosen == "localAI" || gameChosen == "HostAI" || gameChosen=="remoteGameAI"
-  #AI MAKES MOVE
-  include("move.jl")
-  #GET THE MOVE THAT THE AI MADE(FROM THE DATABASE) AND SEND THE PACKET IF ITS A NETWORKING GAME
-  filename=ARGS[1]
-  if gameChosen == "HostAI" || gameChosen == "remoteGameAI"
-    setNetPacketDB(ip, port, moveNum, as, filname)
-  #test = getMove()
-  # @js w alert(test)
-  end
-  updateTable()
+    @js w startLoadingAnimation()
+    # AI MAKES MOVE
+    include("move.jl")
+
+    # GET THE MOVE THAT THE AI MADE(FROM THE DATABASE) AND SEND THE PACKET IF ITS A NETWORKING GAME
+    filename=ARGS[1]
+    if gameChosen == "HostAI" || gameChosen == "remoteGameAI"
+      setNetPacketDB(ip, port, moveNum, as, filname)
+      println("--------------------------------------------------------------FOURTEEN")
+      println(clientside, message)
+      println("Waiting for move")
+      reply = readline(clientside)
+      println("Move received")
+      println("Server message: $reply")
+      parserOfMessage(reply)
+    end
+
+    updateTable()
+    @js w stopLoadingAnimation()
   end
 
 end
@@ -1102,10 +1207,10 @@ status =""
 
 
 while status != "exit"
-sleep(0.01)
-status = @js w statusJS
+  sleep(0.01)
+  status = @js w statusJS
 
-currPlayer = @js w currentPlayer
+  currPlayer = @js w currentPlayer
 
 #println(moveNum)
   if status == "generateTable"
@@ -1122,10 +1227,24 @@ currPlayer = @js w currentPlayer
       close(clientside)
       #send resign packet
       setNetPacketResign(ip, port, moveNum, as, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0)
+      println("--------------------------------------------------------------FIFTEEN")
+      println(clientside, message)
+      println("Waiting for move")
+      reply = readline(clientside)
+      println("Move received")
+      println("Server message: $reply")
+      parserOfMessage(reply)
     end
     if gameChosen == "remoteGameAI" || gameChosen== "remoteGameP"
       #send resign packet
       setNetPacketResign(ip, port, moveNum, as, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0)
+      println("--------------------------------------------------------------SIXTEEN")
+      println(clientside, message)
+      println("Waiting for move")
+      reply = readline(clientside)
+      println("Move received")
+      println("Server message: $reply")
+      parserOfMessage(reply)
     end
     break
   end
@@ -1137,12 +1256,6 @@ currPlayer = @js w currentPlayer
     status = @js w resetStatus()
   end
 
-if status == "movejl"
-  println("movejl clicked")
-  include("move.jl")
-  updateTable()
-  status = @js w resetStatus()
-end
 
 if status == "email"
   println("Email clicked")
@@ -1153,6 +1266,8 @@ if status == "email"
 end
 
 if currPlayer != goFirst && (gameChosen == "localAI" || gameChosen == "HostAI" || gameChosen=="remoteGameAI")
+
+ @js w startLoadingAnimation()
   #AI MAKES MOVE
   include("move.jl")
   #GET THE MOVE THAT THE AI MADE(FROM THE DATABASE) AND SEND THE PACKET IF ITS A NETWORKING GAME
@@ -1162,7 +1277,7 @@ if currPlayer != goFirst && (gameChosen == "localAI" || gameChosen == "HostAI" |
   end
   updateTable()
   status = @js w resetStatus()
-
+  @js w stopLoadingAnimation()
   elseif status == "makeMove"
     #USER MAKING MOVE
     resetArgs()
@@ -1181,17 +1296,10 @@ if currPlayer != goFirst && (gameChosen == "localAI" || gameChosen == "HostAI" |
       push!(ARGS,split(arr[2],",")[2])
       push!(ARGS,promotion)
 
-
-
       if gameChosen == "HostP" || gameChosen == "remoteGameP"
-
-  #        reply = setNetPacket(ip, port, moveNum, as, ARGS[2], ARGS[3], 2, ARGS[4], ARGS[5], ARGS[6], cheating, 0, 0, 0, 0)
-  #        parserOfMessage(reply) # TODO - Stacey, remove this????????????????????????????????
+          updateTable()
           println("sending the next move")
-          #"<wincode>:<authString>:<movenum>:<movetype>:<sourcex>:<sourcey>:<targetx>:<targety>:<option>:<cheating>:<
-          #targetx2>:<targety2>"
           message = setNetPacket(ip, port, moveNum, authString, ARGS[2], ARGS[3], 2, ARGS[4], ARGS[5], ARGS[6], cheating, 0, 0, 0, 0)
-  #        moveNumber = moveNumber + 1
           println(message)
           println("--------------------------------------------------------------FIVE")
           println(clientside, message)
@@ -1200,8 +1308,7 @@ if currPlayer != goFirst && (gameChosen == "localAI" || gameChosen == "HostAI" |
           reply = readline(clientside)
           println("Move received")
           println("Server message: $reply")
-          parserOfMessage(reply) # TODO - Stacey, remove this????????????????????????
-          @js w alert("after setNetPacket")
+          parserOfMessage(reply)
       end
 
     elseif length(arr) == 3
@@ -1215,22 +1322,37 @@ if currPlayer != goFirst && (gameChosen == "localAI" || gameChosen == "HostAI" |
 
     if gameChosen == "HostP" || gameChosen == "remoteGameP"
       setNetPacket(ip, port, moveNum, as, ARGS[2], ARGS[3], 1, ARGS[4], ARGS[5], ARGS[6], cheating, ARGS[7], ARGS[8], 0, 0)
+      println("--------------------------------------------------------------ELEVEN")
+      println(clientside, message)
+
+      println("Waiting for move")
+      reply = readline(clientside)
+      println("Move received")
+      println("Server message: $reply")
+      parserOfMessage(reply)
     end
 
-  elseif length(arr) == 4
-    push!(ARGS,split(arr[1],",")[1])
-    push!(ARGS,split(arr[1],",")[2])
-    push!(ARGS,split(arr[2],",")[1])
-    push!(ARGS,split(arr[2],",")[2])
-    push!(ARGS,promotion)
-    push!(ARGS,split(arr[3],",")[1])
-    push!(ARGS,split(arr[3],",")[2])
-    push!(ARGS,split(arr[4],",")[1])
-    push!(ARGS,split(arr[4],",")[2])
+    elseif length(arr) == 4
+      push!(ARGS,split(arr[1],",")[1])
+      push!(ARGS,split(arr[1],",")[2])
+      push!(ARGS,split(arr[2],",")[1])
+      push!(ARGS,split(arr[2],",")[2])
+      push!(ARGS,promotion)
+      push!(ARGS,split(arr[3],",")[1])
+      push!(ARGS,split(arr[3],",")[2])
+      push!(ARGS,split(arr[4],",")[1])
+      push!(ARGS,split(arr[4],",")[2])
 
-    if gameChosen == "HostP" || gameChosen == "remoteGameP"
-      setNetPacket(ip, port, moveNum, as, ARGS[2], ARGS[3], 1, ARGS[4], ARGS[5], ARGS[6], cheating, ARGS[7], ARGS[8], ARGS[9], ARGS[10])
-    end
+      if gameChosen == "HostP" || gameChosen == "remoteGameP"
+        setNetPacket(ip, port, moveNum, as, ARGS[2], ARGS[3], 1, ARGS[4], ARGS[5], ARGS[6], cheating, ARGS[7], ARGS[8], ARGS[9], ARGS[10])
+        println("--------------------------------------------------------------TWELVE")
+        println(clientside, message)
+        println("Waiting for move")
+        reply = readline(clientside)
+        println("Move received")
+        println("Server message: $reply")
+        parserOfMessage(reply)
+      end
 
     else
       @js w alert("INVALID MOVE. REJECTED!")
@@ -1239,13 +1361,19 @@ if currPlayer != goFirst && (gameChosen == "localAI" || gameChosen == "HostAI" |
       continue
     end
 
+    #Toren - Alert with AI's opinion of the move
+    #move = argsToMovementMove()
+    #moveWorth = getMoveWorth(board, move)
+    #@js w alert( $moveWorth )
+
     println(ARGS)
     include("move_user_move.jl")
     # include("validate.jl")
     # @js w alert("Valid result: " + $resultValidate)
     updateTable()
     status = @js w resetStatus()
-  end
+    end
+
 
   if status == "makeDrop"
     #where drops are made
@@ -1267,10 +1395,22 @@ if currPlayer != goFirst && (gameChosen == "localAI" || gameChosen == "HostAI" |
       continue
     end
 
-#################################################################################################UPDATE THIS##########################################################################
+    #################################################################################################UPDATE THIS##########################################################################
     if gameChosen == "HostP" || gameChosen == "remoteGameP"
-      setNetPacket(ip, port, moveNum, as, ARGS[2], ARGS[3], 2, ARGS[4], ARGS[5], ARGS[6], cheating, 0, 0, 0, 0)
+      setNetPacket(ip, port, moveNum, as, ARGS[2], ARGS[3], 1, ARGS[4], ARGS[5], ARGS[6], cheating, ARGS[7], ARGS[8], ARGS[9], ARGS[10])
+      println("--------------------------------------------------------------THIRTEEN")
+      println(clientside, message)
+      println("Waiting for move")
+      reply = readline(clientside)
+      println("Move received")
+      println("Server message: $reply")
+      parserOfMessage(reply)
     end
+
+    #Toren - Alert with AI's opinion of the move
+    #move = argsToDropMove()
+    #moveWorth = getMoveWorth(board, move)
+    #@js w alert( $moveWorth )
 
     println(ARGS)
     include("move_user_drop.jl")
@@ -1290,7 +1430,15 @@ if currPlayer != goFirst && (gameChosen == "localAI" || gameChosen == "HostAI" |
     status = @js w resetStatus()
   end
 
-
+  if status == "tips"
+	  f = open("tips.txt")
+	  lines = readlines(f)
+	  i = rand(1:length(lines))
+	  tip = lines[i]
+	  close(f)
+	  @js w alert($tip)
+    status = @js w resetStatus()
+  end
 
   if status == "checkWin"
     include("win.jl")
@@ -1298,12 +1446,16 @@ if currPlayer != goFirst && (gameChosen == "localAI" || gameChosen == "HostAI" |
     status = @js w resetStatus()
   end
 
-  # getServerPacket(ip, port)
-  #=
-  if gameChosen == "HostP" || gameChosen == "remoteGameP" || gameChosen == "remoteGameAI" || gameChosen == "HostAI"
-    parserOfMessage(ip, port)
+  if status == "checkPromotionJS"
+
+    lastCoord = @js w promCoords
+    yCoord = parse(Int,split(lastCoord,",")[2])
+    cPlayer = @js w currentPlayer
+
+    @js w setAllowPromotion($(canPromote(cPlayer, yCoord)))
+
+     status = @js w resetStatus()
   end
-  =#
 
 end #end  loop
 

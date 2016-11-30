@@ -19,26 +19,41 @@ end
 function populateDBMove()
   db=SQLite.DB(ARGS[1])
   if isdefined(ARGS, 7) && isdefined(ARGS, 8)
-    println("THERE EXIST X2 Y2.")
-    ######################ADD TARGETX3 TARGETY3 (if they exist?)
 
-      if isdefined(ARGS, 9)
-        println("THERE EXIST X3 Y3.")
+    if isdefined(ARGS, 9)
+
+      # THIS is specifically for if the args are coming in a packet across a network
+      if ARGS[7] == "0" #ARGS 7 onwards are 0
         if ARGS[6] == "T"
           promotion = "\'!\'"
-          SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, option, targetx2, targety2, targetx3, targety3) VALUES ($(numberOfMove()+1), 'move', $(ARGS[2]), $(ARGS[3]), $(ARGS[4]), $(ARGS[5]), $promotion, $(ARGS[7]), $(ARGS[8]), $(ARGS[9]), $(ARGS[10]))")
+          SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, option) VALUES ($(numberOfMove()+1), 'move', $(ARGS[2]), $(ARGS[3]), $(ARGS[4]), $(ARGS[5]), $promotion)")
         elseif ARGS[6] == "F"
-          SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, targetx2, targety2, targetx3, targety3) VALUES ($(numberOfMove()+1), 'move', $(ARGS[2]), $(ARGS[3]), $(ARGS[4]), $(ARGS[5]), $(ARGS[7]), $(ARGS[8]), $(ARGS[9]), $(ARGS[10]))")
+          SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety) VALUES ($(numberOfMove()+1), 'move', $(ARGS[2]), $(ARGS[3]), $(ARGS[4]), $(ARGS[5]))")
         end
-      elseif !isdefined(ARGS, 9)
-        println("THERE ARE NO X3 Y3")
+      elseif ARGS[9] == "0" #ARGS 7 and 8 are not 0, but 9 is.
         if ARGS[6] == "T"
           promotion = "\'!\'"
           SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, option, targetx2, targety2) VALUES ($(numberOfMove()+1), 'move', $(ARGS[2]), $(ARGS[3]), $(ARGS[4]), $(ARGS[5]), $promotion, $(ARGS[7]), $(ARGS[8]))")
         elseif ARGS[6] == "F"
           SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, targetx2, targety2) VALUES ($(numberOfMove()+1), 'move', $(ARGS[2]), $(ARGS[3]), $(ARGS[4]), $(ARGS[5]), $(ARGS[7]), $(ARGS[8]))")
         end
+      else #If ARGS 7, 8, 9, 10 are all not 0
+        if ARGS[6] == "T"
+          promotion = "\'!\'"
+          SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, option, targetx2, targety2, targetx3, targety3) VALUES ($(numberOfMove()+1), 'move', $(ARGS[2]), $(ARGS[3]), $(ARGS[4]), $(ARGS[5]), $promotion, $(ARGS[7]), $(ARGS[8]), $(ARGS[9]), $(ARGS[10]))")
+        elseif ARGS[6] == "F"
+          SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, targetx2, targety2, targetx3, targety3) VALUES ($(numberOfMove()+1), 'move', $(ARGS[2]), $(ARGS[3]), $(ARGS[4]), $(ARGS[5]), $(ARGS[7]), $(ARGS[8]), $(ARGS[9]), $(ARGS[10])")
+        end
       end
+    elseif !isdefined(ARGS, 9)
+      println("THERE ARE NO X3 Y3")
+      if ARGS[6] == "T"
+        promotion = "\'!\'"
+        SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, option, targetx2, targety2) VALUES ($(numberOfMove()+1), 'move', $(ARGS[2]), $(ARGS[3]), $(ARGS[4]), $(ARGS[5]), $promotion, $(ARGS[7]), $(ARGS[8]))")
+      elseif ARGS[6] == "F"
+        SQLite.query(db, "INSERT INTO moves (move_number, move_type, sourcex, sourcey, targetx, targety, targetx2, targety2) VALUES ($(numberOfMove()+1), 'move', $(ARGS[2]), $(ARGS[3]), $(ARGS[4]), $(ARGS[5]), $(ARGS[7]), $(ARGS[8]))")
+      end
+    end
 
   elseif !isdefined(ARGS, 7)
     println("THERE ARE NO X2 Y2")
@@ -50,7 +65,6 @@ function populateDBMove()
     end
   end
 
-    #println(SQLite.query(db,"SELECT * FROM moves"))
 end
 
   #Returns the number of Moves in the game
@@ -99,7 +113,4 @@ end
 
 populateDBMove()
 
-println(numberOfMove())
-#= unit test code - to be removed from the production code =#
-#= print the content of the moves table =#
 printMoves()
